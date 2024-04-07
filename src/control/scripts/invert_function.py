@@ -7,7 +7,6 @@ force = sp.symbols("force")
 
 f = 3.23e-08 * pwm**3 - 0.0001421 * pwm**2 + 0.2139 * pwm - 110.1
 
-
 inverse = sp.solve(f - force, pwm)
 inverse_function = sp.lambdify(force, inverse)
 
