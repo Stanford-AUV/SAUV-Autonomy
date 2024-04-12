@@ -13,10 +13,10 @@ TAM = np.empty(shape=(6, 8))
 r_is = np.array([[1, 1, 0], # thruster 1
                  [-1, 1, 0], # ... 2
                  [-1, -1, 0], # ... 3
-                 [1, -1, 0] # ... 4
-                 [1, 1, 1] # ... 5
-                 [-1, 1, 1] # ... 6
-                 [-1, -1, 1] # ... 7
+                 [1, -1, 0], # ... 4
+                 [1, 1, 1], # ... 5
+                 [-1, 1, 1], # ... 6
+                 [-1, -1, 1], # ... 7
                  [1, -1, 1]]) # ... 8
 
 # thruster orientations
@@ -36,16 +36,14 @@ u_is = np.array(
 
 TAM[:3, :] = u_is.T
 TAM[3:, :] = np.cross(r_is, u_is).T
-
 TAM_inv = np.linalg.pinv(TAM)
-
 
 def sqrt_model(x, a, b):
         return a * np.sqrt(x) + b
 
 def total_force_to_individual_thrusts(desired_wrench):
     """Converts a desired force to motor thrusts.
-    Force is a 6x1 vector with the desired force in the x, y, z, roll, pitch, and yaw directions.
+    Force is a 8x1 vector with the desired force in the x, y, z, roll, pitch, and yaw directions.
     """
     return TAM_inv @ desired_wrench
 
