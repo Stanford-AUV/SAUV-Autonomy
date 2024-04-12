@@ -6,15 +6,27 @@ with open(filename, 'r') as f:
     COEFFS = json.load(f)
 COEFFS = {int(k): v for k, v in COEFFS.items()} # convert keys from strings to ints
 
-TAM = np.empty(shape=(6, 4))
+TAM = np.empty(shape=(6, 8))
 
 # thruster positions in body frame
-r_is = np.array([[1, 1, 0], [-1, 1, 0], [-1, -1, 0], [1, -1, 0]])
+# NOTE: these are not the official positions, to be changed later
+r_is = np.array([[1, 1, 0], # thruster 1
+                 [-1, 1, 0], # ... 2
+                 [-1, -1, 0], # ... 3
+                 [1, -1, 0] # ... 4
+                 [1, 1, 1] # ... 5
+                 [-1, 1, 1] # ... 6
+                 [-1, -1, 1] # ... 7
+                 [1, -1, 1]]) # ... 8
 
 # thruster orientations
-# note: these point in the direction of positive thrust
+# note: these point in the direction of positive thrust; z axis can be changed accordingly
 u_is = np.array(
     [
+        [-np.cos(np.pi / 4), np.sin(np.pi / 4), 0],
+        [np.cos(np.pi / 4), np.sin(np.pi / 4), 0],
+        [np.cos(np.pi / 4), -np.sin(np.pi / 4), 0],
+        [-np.cos(np.pi / 4), -np.sin(np.pi / 4), 0],
         [-np.cos(np.pi / 4), np.sin(np.pi / 4), 0],
         [np.cos(np.pi / 4), np.sin(np.pi / 4), 0],
         [np.cos(np.pi / 4), -np.sin(np.pi / 4), 0],
