@@ -1,7 +1,6 @@
 import rospy
 
 
-
 class Controller :
     """
     A class representing a PID controller
@@ -48,8 +47,7 @@ class Controller :
 
     def reset(self) :
         """
-        Resets the controller by setting the integral and 
-        previous error to 0
+        Resets the controller by setting the integral and previous error to 0
         """
         self._integral = 0
         self._prev_error = 0
