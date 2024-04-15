@@ -1,19 +1,16 @@
 import rospy
 
 
-class Controller :
-    """
-    A class representing a PID controller
-    """
+class PIDController :
 
     def __init__(self, kP, kI, kD, p_start_i) :
         """
         Initialization for Controller class
 
-        kP - error gain
-        kI - integral gain
-        kD - derivative gain
-        p_start_i - error at which to start integral term
+        :param kP: Error gain
+        :param kI: Integral gain
+        :param kD: Derivative gain
+        :param p_start_i: Error at which to start integral term
         """
         self._kP = kP
         self._kI = kI
@@ -21,25 +18,21 @@ class Controller :
         self._p_start_i = p_start_i
         self._integral = 0
         self._prev_error = 0
-        self.desired = 0
-
-    def set_desired(self, desired) :
-        """
-        Set the desired value for the controller to reach
-        """
-        self.desired = desired
     
-    def update(self, state) :
+    def update(self, desired, state, dt) :
         """
         Updates the controller and returns new output power
 
-        state - robot's current state
+        :param desired: The desired state of the robot
+        :param state: Robot's current state
+        :param dt: Time step from last control loop, in seconds
+        :return: Control signal
         """
-        error = self.desired - state
-        derivative = error - self._prev_error
+        error = desired - state
+        derivative = (error - self._prev_error) / dt
         # We wait to incorporate integral term to avoid windup
         if(error <= self._p_start_i) :
-            self._integral += error
+            self._integral += error * dt
         output = error * self._kP + self._integral * self._kI + derivative * self._kD
         # Current error becomes the previous in the next loop
         self._prev_error = error
@@ -51,3 +44,4 @@ class Controller :
         """
         self._integral = 0
         self._prev_error = 0
+
