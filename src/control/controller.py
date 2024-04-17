@@ -1,4 +1,5 @@
 import rospy
+import threading
 
 
 class PIDController :
@@ -18,6 +19,9 @@ class PIDController :
         self._p_start_i = p_start_i
         self._integral = 0
         self._prev_error = 0
+        self.running = False
+        self.lock = threading.Lock()
+
     
     def update(self, desired, state, dt) :
         """
@@ -45,3 +49,15 @@ class PIDController :
         self._integral = 0
         self._prev_error = 0
 
+    def start(self, feedback_source) :
+        """
+        Starts the rospy node and PID controller thread
+        """
+        rospy.spin()
+        self.running = True
+
+    def stop(self):
+        """
+        Stops the rospy node and shuts down the controller thread
+        """
+        self.running = False
