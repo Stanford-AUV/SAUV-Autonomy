@@ -1,4 +1,4 @@
-import rospy
+import rclpy
 import threading
 
 
@@ -53,7 +53,7 @@ class PIDController :
         """
         Starts the rospy node and PID controller thread
         """
-        rospy.spin()
+        rclpy.spin()
         self.running = True
 
     def stop(self):
