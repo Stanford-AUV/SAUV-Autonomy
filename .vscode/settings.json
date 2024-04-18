@@ -2,5 +2,7 @@
   "[python]": {
     "editor.defaultFormatter": "ms-python.black-formatter",
     "editor.formatOnSave": true
-  }
+  },
+  "python.terminal.activateEnvironment": false,
+  "editor.tabSize": 4
 }
