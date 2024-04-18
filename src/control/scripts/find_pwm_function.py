@@ -6,59 +6,69 @@ import pandas as pd
 
 # COEFFS = {Voltage (int): Eq_coeffs (list of len 2)}
 # Eq_coeffs = [[a_pos, b_pos], [a_neg, b_neg]] of 'a * sqrt(x) + b' for pos and neg thrusts
-COEFFS = {10 : [], 12 : [], 14: [], 16: [], 18: [], 20: []}
+COEFFS = {10: [], 12: [], 14: [], 16: [], 18: [], 20: []}
+
+
+def quadratic_model(x, a, b):
+    return a * np.square(x - b)
+
+
+def inverse_quadratic_model(x, a, b):
+    second_part = np.sqrt(np.abs(x)) / np.sqrt(a)
+    return np.where(x >= 0, b + second_part, b - second_part)
+
 
 def find_coeffs(voltage, plot=False):
-    
     # Load CSV
     filename = str(voltage) + "V.csv"
     df = pd.read_csv(filename)
-    y = np.array([float(val) for val in df[' PWM (µs)'].values.tolist()])
-    x = np.array([float(val) for val in df[' Force (Kg f)'].values.tolist()])
-    idx_1500 = np.where(y == 1500)[0][0]
+    x = np.array([float(val) for val in df[" PWM (µs)"].values.tolist()])
+    y = np.array([float(val) for val in df[" Force (Kg f)"].values.tolist()])
 
-    def sqrt_model(x, a, b):
-        return a * np.sqrt(x) + b
-
-    # Piecewise fit sqrt curves
-    popt_pos, _ = curve_fit(sqrt_model, x[idx_1500:], y[idx_1500:])
-    popt_neg, _ = curve_fit(sqrt_model, -1 * x[:idx_1500], -1 * y[:idx_1500] + 2 * y[idx_1500])
-    popt_neg[0] *= -1
+    # Piecewise fit quadratic model with a and b positive
+    popt, _ = curve_fit(quadratic_model, x, np.abs(y), bounds=(0, [np.inf, np.inf]))
 
     if plot:
-        x_plot_pos = np.linspace(min(x[idx_1500:]), max(x[idx_1500:]), 200)
-        x_plot_neg = np.linspace(min(x[:idx_1500]), max(x[:idx_1500]), 200)
-        y_plot_pos = sqrt_model(x_plot_pos, *popt_pos)
-        y_plot_neg = sqrt_model(-1 * x_plot_neg, *popt_neg)
-
+        x_plot = np.linspace(min(x), max(x), 200)
+        y_plot = quadratic_model(x_plot, *popt)
         # Plot the original data points
-        plt.scatter(x, y, color="red", label="Data Points")
+        plt.scatter(x, np.abs(y), color="red", label="Data Points")
         # Plot sqrt approx
-        plt.plot(x_plot_pos, y_plot_pos, color="blue", label="Pos")
-        plt.plot(x_plot_neg, y_plot_neg, color="green", label="Neg")
-        plt.xlabel("x")
-        plt.ylabel("y")
-        title = "Sqrt Approx of " + str(voltage) + "V"
+        plt.plot(x_plot, y_plot, color="blue")
+        plt.xlabel("PWM (µs)")
+        plt.ylabel("Force (Kg f)")
+        title = "Quadratic Approx"
         plt.title(title)
         plt.legend()
         plt.show()
 
-    return [popt_pos, popt_neg]
+        x_plot = np.linspace(min(y), max(y), 200)
+        y_plot = inverse_quadratic_model(x_plot, *popt)
+        # Plot the original data points flipped
+        plt.scatter(y, x, color="red", label="Data Points")
+        # Plot sqrt approx
+        plt.plot(x_plot, y_plot, color="blue")
+        plt.xlabel("Force (Kg f)")
+        plt.ylabel("PWM (µs)")
+        title = "Inverse Quadratic Approx"
+        plt.title(title)
+        plt.legend()
+        plt.show()
+
+    return popt
+
 
 def main():
     # Find coeffs for each voltage
     for volt, _ in COEFFS.items():
-        COEFFS[volt].extend(find_coeffs(volt, plot=True))
-    
-    # Convert to list
-    for key in COEFFS:
-        COEFFS[key] = [arr.tolist() for arr in COEFFS[key]]
+        COEFFS[volt] = tuple(find_coeffs(volt, plot=True))
 
     # Store coeffs in JSON file
-    with open('../coeffs.json', 'w') as f:
+    with open("../coeffs.json", "w") as f:
         json.dump(COEFFS, f)
 
     print(COEFFS)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
