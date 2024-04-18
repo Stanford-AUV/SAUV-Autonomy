@@ -14,6 +14,20 @@ export PYTHONPATH=${PYTHONPATH}:$PWD/src
 
 Make sure to use VSCode. Install all the extensions mentioned in the `.vscode/extensions.json` file.
 
+# Building
+
+To build the code, please run the following:
+```bash
+colcon build && . install/setup.zsh
+```
+
+# Running
+
+To run a ROS node, please run the following:
+```bash
+ros2 run MODULE_NAME NODE_NAME
+```
+
 # Testing
 
 To run tests, use the `unittest` module like so:
