@@ -1,7 +1,9 @@
 import rclpy
 from rclpy.node import Node
+from rcl_interfaces.msg import SetParametersResult
 import threading
 from std_msgs.msg import Float64
+from std_srvs.srv import Empty
 
 class PIDController(Node):
 
@@ -16,16 +18,43 @@ class PIDController(Node):
         self.running = False
         self.lock = threading.Lock()
         
-        self.declare_parameter('kP', kP)
-        self.declare_parameter('kI', kI)
-        self.declare_parameter('kD', kD)
+        # Declare parameters and allow for runtime reconfiguration
+        self.declare_parameters(
+            namespace='',
+            parameters=[
+                ('kP', self._kP),
+                ('kI', self._kI),
+                ('kD', self._kD),
+                ('p_start_i', self._p_start_i)
+            ]
+        )
 
+        # Subscribers and Publishers
         self.error_publisher = self.create_publisher(Float64, 'error', 10)
         self.output_publisher = self.create_publisher(Float64, 'controller_output', 10)
         
+        # Services
+        self.reset_service = self.create_service(Empty, 'reset_controller', self.handle_reset)
+
+        # Timer setup
         self.timer = self.create_timer(0.1, self.timer_callback)  # 10 Hz
         self.desired = 0
         self.state = 0
+
+        # Add a parameter callback
+        self.add_on_set_parameters_callback(self.parameters_callback)
+
+    def parameters_callback(self, params):
+        for param in params:
+            if param.name == 'kP':
+                self._kP = param.value
+            elif param.name == 'kI':
+                self._kI = param.value
+            elif param.name == 'kD':
+                self._kD = param.value
+            elif param.name == 'p_start_i':
+                self._p_start_i = param.value
+        return SetParametersResult(successful=True)
 
     def update(self, desired, state, dt):
         error = desired - state
@@ -58,6 +87,11 @@ class PIDController(Node):
         with self.lock:
             self._integral = 0
             self._prev_error = 0
+
+    def handle_reset(self, request, response):
+        self.get_logger().info('Resetting controller settings.')
+        self.reset()
+        return response
 
 def main(args=None):
     rclpy.init(args=args)
