@@ -1,24 +1,41 @@
 import numpy as np
 import json
-from scripts.find_pwm_function import inverse_quadratic_model
 
-filename = "coeffs.json"
-with open(filename, "r") as f:
-    COEFFS = json.load(f)
-COEFFS = {int(k): v for k, v in COEFFS.items()}  # convert keys from strings to ints
+
+def quadratic_model(x, a, b):
+    return a * np.square(x - b)
+
+
+def inverse_quadratic_model(x, a, b):
+    second_part = np.sqrt(np.abs(x)) / np.sqrt(a)
+    return np.where(x >= 0, b + second_part, b - second_part)
+
+
+COEFFS = {
+    10: [1.8343560975506323e-05, 1481.466452853926],
+    12: [2.3194713277650457e-05, 1481.0593557569864],
+    14: [2.8235512746477604e-05, 1480.8191181032553],
+    16: [3.28040783880607e-05, 1480.6115720889093],
+    18: [3.638563822982247e-05, 1481.421310875163],
+    20: [3.8972515653759295e-05, 1480.4018523627565],
+}
 
 TAM = np.empty(shape=(6, 8))
 
 # thruster positions in body frame
 # NOTE: these are not the official positions, to be changed later
-r_is = np.array([[1, 1, 0], # thruster 1
-                 [-1, 1, 0], # ... 2
-                 [-1, -1, 0], # ... 3
-                 [1, -1, 0] # ... 4
-                 [1, 1, 1] # ... 5
-                 [-1, 1, 1] # ... 6
-                 [-1, -1, 1] # ... 7
-                 [1, -1, 1]]) # ... 8
+r_is = np.array(
+    [
+        [1, 1, 0],  # thruster 1
+        [-1, 1, 0],  # ... 2
+        [-1, -1, 0],  # ... 3
+        [1, -1, 0],  # ... 4
+        [1, 1, 1],  # ... 5
+        [-1, 1, 1],  # ... 6
+        [-1, -1, 1],  # ... 7
+        [1, -1, 1],  # ... 8
+    ]
+)
 
 # thruster orientations
 # note: these point in the direction of positive thrust; z axis can be changed accordingly
@@ -90,7 +107,8 @@ def total_force_to_individual_pwm(desired_wrench):
     """Converts a desired force to motor PWM values.
     Force is a 6x1 vector with the desired force in the x, y, z, roll, pitch, and yaw directions.
     """
-    return thrust_to_pwm(total_force_to_individual_thrusts(desired_wrench))
+    thrusts = total_force_to_individual_thrusts(desired_wrench)
+    return np.array([thrust_to_pwm(thrust) for thrust in thrusts])
 
 
 if __name__ == "__main__":

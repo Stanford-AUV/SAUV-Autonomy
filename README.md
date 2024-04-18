@@ -27,6 +27,10 @@ To run a ROS node, please run the following:
 ```bash
 ros2 run MODULE_NAME NODE_NAME
 ```
+For example:
+```bash
+ros2 run control thruster_manager
+```
 
 # Testing
 
