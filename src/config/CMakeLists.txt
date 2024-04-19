@@ -25,5 +25,3 @@ endif()
 
 ament_package()
 
-
-testing
