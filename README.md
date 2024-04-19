@@ -4,10 +4,17 @@ Autonomy stack
 
 # Installation
 
-Make sure ROS 2 Iron is fully installed.
+Make sure Docker and VSCode are installed. Then open the workspace on Docker in VSCode
+
+1. Type CMD + Shift + P.
+2. Then type "Open Folder in Container".
+3. Select this workspace folder
+4. Press enter
+
 Also, from inside the root folder of this repository, run the following in every new Terminal:
 ```bash
 export PYTHONPATH=${PYTHONPATH}:$PWD/src
+python3 -m pip install -r requirements.txt
 ```
 
 # Development
