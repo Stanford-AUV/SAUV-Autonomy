@@ -23,9 +23,13 @@ Make sure to use VSCode. Install all the extensions mentioned in the `.vscode/ex
 
 # Building
 
+First, make sure you have all the dependencies:
+```bash
+rosdep install -i --from-path src --rosdistro iron -y
+```
 To build the code, please run the following:
 ```bash
-colcon build && . install/setup.zsh
+colcon build && source install/setup.bash
 ```
 
 # Running
