@@ -4,7 +4,7 @@ Autonomy stack
 
 # Installation
 
-Make sure Docker and VSCode are installed. Then open the workspace on Docker in VSCode
+Make sure Docker and VSCode are installed. Then open the workspace on Docker in VSCode:
 
 1. Type CMD + Shift + P.
 2. Then type "Open Folder in Container".
