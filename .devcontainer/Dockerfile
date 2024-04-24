@@ -1,17 +1,29 @@
-FROM ros:iron-ros-base
+FROM ros:iron-ros-base-jammy
+
+# Install ros2 packages
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ros-iron-desktop=0.10.0-3* \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ros-iron-desktop-full=0.10.0-3* \
+    && rm -rf /var/lib/apt/lists/*
 
 ARG USERNAME=rosdev
 ARG UID=1000
 ARG GID=$UID
 
-# Install some dependencies packages
+# Install some more dependencies packages
 RUN apt update -q \
     && apt upgrade -q -y \
     && apt install -y --no-install-recommends \
     software-properties-common \
     python3-pip \
     xauth \
-    ros-iron-webots-ros2 \
+    && sh -c 'echo "deb [arch=$(dpkg --print-architecture)] http://packages.ros.org/ros2/ubuntu $(lsb_release -cs) main" > /etc/apt/sources.list.d/ros2-latest.list' \
+    && curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | apt-key add - \
+    && apt-get update \
+    && apt install ros-iron-ros-gz \
     && apt clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
