@@ -42,7 +42,7 @@ with depthai.Device(pipeline) as device:
             contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
             for contour in contours:
-                if cv2.contourArea(contour) > MIN_AREA:  # Define MIN_AREA to filter out small detections
+                if cv2.contourArea(contour) > 50:  # Define MIN_AREA to filter out small detections
                     x, y, w, h = cv2.boundingRect(contour)
                     cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
 
