@@ -24,26 +24,22 @@ Autonomy stack
 18. Open a new VSCode window, press `CMD + Shift + P`, and type `Remote-SSH: Connect to Host` followed by `Enter`. Select `Add New SSH Host`. Enter `ssh USER@HOST.local` followed by `Enter`. Select your user's configuration file to update. Finally press connect.
 19. Choose `Clone Repository` in the sidebar, select `Clone from GitHub`, and select the Stanford AUV Autonomy repository. Choose a folder to clone it in (something like `~/GitHub/`).
 20. Open a Terminal in VSCode and run: `bash install.sh`
-21. You're all set!
+21. Install all VSCode extensions from the `.vscode/extensions.json`.
+22. You're all set!
 
 # Development
 
 Make sure to use VSCode. Install all the extensions mentioned in the `.vscode/extensions.json` file.
 
-Create a new VSCode Terminal, and run on each new terminal window:
-```bash
-export PYTHONPATH=${PYTHONPATH}:$PWD/src
-```
-
 # Building
 
 First, make sure you have all the dependencies:
 ```bash
-rosdep install -i --from-path src --rosdistro iron -y
+rosdep install -i --from-path src --rosdistro humble -y
 ```
 To build the code, please run the following:
 ```bash
-colcon build && source install/setup.bash
+colcon build --symlink-install && source install/setup.bash
 ```
 
 # Running

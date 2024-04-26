@@ -3,6 +3,8 @@
     "editor.defaultFormatter": "ms-python.black-formatter",
     "editor.formatOnSave": true
   },
-  "python.terminal.activateEnvironment": false,
-  "editor.tabSize": 4
+  "editor.tabSize": 4,
+  "black-formatter.interpreter": [
+    "/usr/bin/python3"
+  ]
 }
