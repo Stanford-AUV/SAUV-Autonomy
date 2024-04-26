@@ -5,6 +5,12 @@ stepSize = 0.05
 
 newConfig = False
 
+H_LOW = 178
+S_LOW = 238
+V_LOW = 150
+H_HIGH = 174
+S_HIGH = 195
+V_HIGH = 255 
 # Create pipeline
 pipeline = dai.Pipeline()
 
