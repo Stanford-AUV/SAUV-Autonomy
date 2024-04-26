@@ -16,7 +16,7 @@ Autonomy stack
 10. When prompted for Ubuntu, press enter, and then login.
 11. Run the following: `sudo apt-get update && sudo apt-get install open-vm-tools-desktop`
 12. Shutdown the Virtual Machine, then restart it, and copy-pasting shortcuts should work.
-13. Run the following in a Terminal: `sudo apt-get install openssh-server && sudo apt install net-tools && service ssh start`
+13. Run the following in a Terminal: `sudo apt-get install openssh-server && sudo apt install net-tools && sudo apt install git-all && service ssh start`
 14. Note the USER@HOST shown in the VM's Ubuntu Terminal. Then open a Terminal on your local computer (i.e. your Mac) and enter `ssh USER@HOST.local`.
 15. If you connect successfully, now type `logout`, and then type `ssh-keygen -t ed25519` leaving all fields as default. Finally type `ssh-copy-id -i ~/.ssh/id_ed25519.pub USER@HOST.local`, once more replacing USER and HOST with your own credentials.
 16. Install VSCode from https://code.visualstudio.com.
@@ -30,6 +30,11 @@ Autonomy stack
 # Development
 
 Make sure to use VSCode. Install all the extensions mentioned in the `.vscode/extensions.json` file.
+In every new Terminal, run:
+```bash
+source /opt/ros/humble/setup.bash
+export PYTHONPATH=${PYTHONPATH}:$PWD/src
+```
 
 # Building
 
