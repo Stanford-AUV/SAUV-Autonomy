@@ -2,12 +2,10 @@ import cv2
 import depthai as dai
 import numpy as np
 
-H_LOW = 178
-S_LOW = 238
-V_LOW = 150
-H_HIGH = 174
-S_HIGH = 195
-V_HIGH = 255 
+# Define HSV range for the color red
+H_LOW, S_LOW, V_LOW = 0, 50, 50  # Red lower bound
+H_HIGH, S_HIGH, V_HIGH = 10, 255, 255  # Red upper bound
+
 # Create pipeline
 pipeline = dai.Pipeline()
 
@@ -27,24 +25,13 @@ xinSpatialCalcConfig.setStreamName("spatialCalcConfig")
 
 # Properties
 monoLeft.setResolution(dai.MonoCameraProperties.SensorResolution.THE_400_P)
-monoLeft.setBoardSocket(dai.CameraBoardSocket.LEFT)
+monoLeft.setCamera("left")
 monoRight.setResolution(dai.MonoCameraProperties.SensorResolution.THE_400_P)
-monoRight.setBoardSocket(dai.CameraBoardSocket.RIGHT)
+monoRight.setCamera("right")
 
 stereo.setDefaultProfilePreset(dai.node.StereoDepth.PresetMode.HIGH_DENSITY)
 stereo.setLeftRightCheck(True)
 stereo.setSubpixel(True)
-
-# Config
-topLeft = dai.Point2f(0.4, 0.4)
-bottomRight = dai.Point2f(0.6, 0.6)
-
-config = dai.SpatialLocationCalculatorConfigData()
-config.depthThresholds.lowerThreshold = 100
-config.depthThresholds.upperThreshold = 10000
-config.roi = dai.Rect(topLeft, bottomRight)
-
-spatialLocationCalculator.initialConfig.addROI(config)
 
 # Linking
 monoLeft.out.link(stereo.left)
@@ -56,24 +43,44 @@ xinSpatialCalcConfig.out.link(spatialLocationCalculator.inputConfig)
 
 # Connect to device and start pipeline
 with dai.Device(pipeline) as device:
-    # Output queue will be used to get the depth frames and spatial data
     depthQueue = device.getOutputQueue(name="depth", maxSize=4, blocking=False)
     spatialCalcQueue = device.getOutputQueue(name="spatialData", maxSize=4, blocking=False)
+    spatialCalcConfigInQueue = device.getInputQueue("spatialCalcConfig")
 
     while True:
-        spatialData = spatialCalcQueue.get().getSpatialLocations()
-        largest_area = 0
-        largest_coord = None
+        inDepth = depthQueue.get() # Get depth data
+        depthFrame = inDepth.getFrame() # depthFrame values are in millimeters
 
-        for depthData in spatialData:
-            roi = depthData.config.roi
-            area = (roi.bottomRight().x - roi.topLeft().x) * (roi.bottomRight().y - roi.topLeft().y)
+        # Convert depth frame to a visible format and to HSV
+        depthFrameColor = cv2.applyColorMap(cv2.convertScaleAbs(depthFrame, alpha=0.03), cv2.COLORMAP_JET)
+        hsvFrame = cv2.cvtColor(depthFrameColor, cv2.COLOR_BGR2HSV)
+        mask = cv2.inRange(hsvFrame, (H_LOW, S_LOW, V_LOW), (H_HIGH, S_HIGH, V_HIGH))
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        # Find the largest rectangle
+        largest_area = 0
+        best_rect = None
+        for contour in contours:
+            x, y, w, h = cv2.boundingRect(contour)
+            area = w * h
             if area > largest_area:
                 largest_area = area
-                largest_coord = (depthData.spatialCoordinates.x, depthData.spatialCoordinates.y, depthData.spatialCoordinates.z)
+                best_rect = (x, y, w, h)
 
-        if largest_coord:
-            print(f"Largest Rectangle Coordinates - X: {largest_coord[0]} mm, Y: {largest_coord[1]} mm, Z: {largest_coord[2]} mm")
+        if best_rect:
+            x, y, w, h = best_rect
+            topLeft = dai.Point2f(x / depthFrameColor.shape[1], y / depthFrameColor.shape[0])
+            bottomRight = dai.Point2f((x + w) / depthFrameColor.shape[1], (y + h) / depthFrameColor.shape[0])
+            config = dai.SpatialLocationCalculatorConfigData()
+            config.depthThresholds.lowerThreshold = 100
+            config.depthThresholds.upperThreshold = 10000
+            config.roi = dai.Rect(topLeft, bottomRight)
+            cfg = dai.SpatialLocationCalculatorConfig()
+            cfg.addROI(config)
+            spatialCalcConfigInQueue.send(cfg)
+
+        # Update the display
+        cv2.imshow("depth", depthFrameColor)
 
         if cv2.waitKey(1) == ord('q'):
             break
