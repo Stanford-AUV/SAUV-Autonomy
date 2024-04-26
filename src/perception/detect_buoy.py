@@ -4,12 +4,12 @@ import depthai
 import numpy as np
 
 
-H_LOW = 0
-S_LOW = 128 
-V_LOW = 128 
-H_HIGH = 30
-S_HIGH = 255
-V_HIGH = 255
+H_LOW = 178
+S_LOW = 238
+V_LOW = 150
+H_HIGH = 174
+S_HIGH = 195
+V_HIGH = 255 
                            
 # Pipeline tells DepthAI what operations to perform when running - you define all the resources used and flows here
 pipeline = depthai.Pipeline()
