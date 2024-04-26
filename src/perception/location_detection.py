@@ -1,16 +1,7 @@
 import cv2
 import depthai as dai
 import numpy as np
-stepSize = 0.05
 
-newConfig = False
-
-H_LOW = 178
-S_LOW = 238
-V_LOW = 150
-H_HIGH = 174
-S_HIGH = 195
-V_HIGH = 255 
 # Create pipeline
 pipeline = dai.Pipeline()
 
@@ -29,7 +20,7 @@ xoutSpatialData.setStreamName("spatialData")
 xinSpatialCalcConfig.setStreamName("spatialCalcConfig")
 
 # Color camera as the output
-cam_rgb = pipeline.createColorCamera()
+cam_rgb = pipeline.create(dai.node.ColorCamera)
 cam_rgb.setPreviewSize(300, 300)  # Frame size
 cam_rgb.setInterleaved(False)
 
@@ -40,171 +31,67 @@ cam_rgb.preview.link(xout_rgb.input)
 
 # Properties
 monoLeft.setResolution(dai.MonoCameraProperties.SensorResolution.THE_400_P)
-monoLeft.setCamera("left")
+monoLeft.setBoardSocket(dai.CameraBoardSocket.LEFT)
 monoRight.setResolution(dai.MonoCameraProperties.SensorResolution.THE_400_P)
-monoRight.setCamera("right")
+monoRight.setBoardSocket(dai.CameraBoardSocket.RIGHT)
 
 stereo.setDefaultProfilePreset(dai.node.StereoDepth.PresetMode.HIGH_DENSITY)
 stereo.setLeftRightCheck(True)
 stereo.setSubpixel(True)
 
-# Config
-topLeft = dai.Point2f(0.4, 0.4)
-bottomRight = dai.Point2f(0.6, 0.6)
-
-config = dai.SpatialLocationCalculatorConfigData()
-config.depthThresholds.lowerThreshold = 100
-config.depthThresholds.upperThreshold = 10000
-calculationAlgorithm = dai.SpatialLocationCalculatorAlgorithm.MEDIAN
-config.roi = dai.Rect(topLeft, bottomRight)
-
-spatialLocationCalculator.inputConfig.setWaitForMessage(False)
-spatialLocationCalculator.initialConfig.addROI(config)
-
 # Linking
 monoLeft.out.link(stereo.left)
 monoRight.out.link(stereo.right)
-
-spatialLocationCalculator.passthroughDepth.link(xoutDepth.input)
 stereo.depth.link(spatialLocationCalculator.inputDepth)
-
+spatialLocationCalculator.passthroughDepth.link(xoutDepth.input)
 spatialLocationCalculator.out.link(xoutSpatialData.input)
 xinSpatialCalcConfig.out.link(spatialLocationCalculator.inputConfig)
 
 # Connect to device and start pipeline
 with dai.Device(pipeline) as device:
-    # Output queue will be used to get the depth frames from the outputs defined above
-    depthQueue = device.getOutputQueue(name="depth", maxSize=4, blocking=False)
-    spatialCalcQueue = device.getOutputQueue(name="spatialData", maxSize=4, blocking=False)
+    q_rgb = device.getOutputQueue("rgb", maxSize=4, blocking=False)
+    spatialCalcQueue = device.getOutputQueue("spatialData", maxSize=4, blocking=False)
     spatialCalcConfigInQueue = device.getInputQueue("spatialCalcConfig")
 
-    color = (255, 255, 255)
-    
-    
-    q_rgb = device.getOutputQueue("rgb")
-
-    # Define the color range for detection
-    lower_bound = np.array([H_LOW, S_LOW, V_LOW])  # Replace with your color's HSV lower bound
-    upper_bound = np.array([H_HIGH, S_HIGH, V_HIGH])  # Replace with your color's HSV upper bound
-
-
     while True:
-        inDepth = depthQueue.get() # Blocking call, will wait until a new data has arrived
-
-        depthFrame = inDepth.getFrame() # depthFrame values are in millimeters
-
-        depth_downscaled = depthFrame[::4]
-        if np.all(depth_downscaled == 0):
-            min_depth = 0  # Set a default minimum depth value when all elements are zero
-        else:
-            min_depth = np.percentile(depth_downscaled[depth_downscaled != 0], 1)
-        max_depth = np.percentile(depth_downscaled, 99)
-        depthFrameColor = np.interp(depthFrame, (min_depth, max_depth), (0, 255)).astype(np.uint8)
-        depthFrameColor = cv2.applyColorMap(depthFrameColor, cv2.COLORMAP_HOT)
-
-        in_rgb = q_rgb.tryGet()
+        in_rgb = q_rgb.get()
+        in_spatial_data = spatialCalcQueue.get()
 
         if in_rgb is not None:
             frame = in_rgb.getCvFrame()
             hsv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-            mask = cv2.inRange(hsv_frame, lower_bound, upper_bound)
+            mask = cv2.inRange(hsv_frame, (0, 50, 50), (10, 255, 255))  # Red color bounds adjusted
             contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
             max_area = 0
-            max_contour = None
+            best_roi = None
 
             for contour in contours:
                 area = cv2.contourArea(contour)
-                if area > 50:  # MIN_AREA to filter out small detections
+                if area > 50:
                     x, y, w, h = cv2.boundingRect(contour)
                     if area > max_area:
                         max_area = area
-                        max_contour = (x, y, w, h)
-                    cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
+                        best_roi = dai.Rect(dai.Point2f(x / frame.shape[1], y / frame.shape[0]),
+                                            dai.Point2f((x + w) / frame.shape[1], (y + h) / frame.shape[0]))
 
-        # Update ROI if a new largest contour was found
-            if max_contour:
-                x, y, w, h = max_contour
-                topLeft = dai.Point2f(x / frame.shape[1], y / frame.shape[0])
-                bottomRight = dai.Point2f((x + w) / frame.shape[1], (y + h) / frame.shape[0])
+            if best_roi:
                 config = dai.SpatialLocationCalculatorConfigData()
                 config.depthThresholds.lowerThreshold = 100
                 config.depthThresholds.upperThreshold = 10000
-                config.roi = dai.Rect(topLeft, bottomRight)
+                config.roi = best_roi
                 cfg = dai.SpatialLocationCalculatorConfig()
                 cfg.addROI(config)
                 spatialCalcConfigInQueue.send(cfg)
-                cv2.imshow("preview", frame)
-            
-        
-        spatialData = spatialCalcQueue.get().getSpatialLocations()
-        for depthData in spatialData:
-            roi = depthData.config.roi
-            roi = roi.denormalize(width=depthFrameColor.shape[1], height=depthFrameColor.shape[0])
-            xmin = int(roi.topLeft().x)
-            ymin = int(roi.topLeft().y)
-            xmax = int(roi.bottomRight().x)
-            ymax = int(roi.bottomRight().y)
 
-            depthMin = depthData.depthMin
-            depthMax = depthData.depthMax
+        # Handling the spatial data output
+        spatial_data = in_spatial_data.getSpatialLocations()
+        for data in spatial_data:
+            roi = data.config.roi.denormalize(frame.shape[1], frame.shape[0])
+            cv2.rectangle(frame, (int(roi.topLeft().x), int(roi.topLeft().y)), 
+                          (int(roi.bottomRight().x), int(roi.bottomRight().y)), (0, 255, 0), 2)
 
-            fontType = cv2.FONT_HERSHEY_TRIPLEX
-            cv2.rectangle(depthFrameColor, (xmin, ymin), (xmax, ymax), color, 1)
-            cv2.putText(depthFrameColor, f"X: {int(depthData.spatialCoordinates.x)} mm", (xmin + 10, ymin + 20), fontType, 0.5, color)
-            cv2.putText(depthFrameColor, f"Y: {int(depthData.spatialCoordinates.y)} mm", (xmin + 10, ymin + 35), fontType, 0.5, color)
-            cv2.putText(depthFrameColor, f"Z: {int(depthData.spatialCoordinates.z)} mm", (xmin + 10, ymin + 50), fontType, 0.5, color)
-        # Show the frame
-        cv2.imshow("depth", depthFrameColor)
-
-        key = cv2.waitKey(1)
-        if key == ord('q'):
+        # Display the combined RGB and depth information
+        cv2.imshow("Combined Stream", frame)
+        if cv2.waitKey(1) == ord('q'):
             break
-        elif key == ord('w'):
-            if topLeft.y - stepSize >= 0:
-                topLeft.y -= stepSize
-                bottomRight.y -= stepSize
-                newConfig = True
-        elif key == ord('a'):
-            if topLeft.x - stepSize >= 0:
-                topLeft.x -= stepSize
-                bottomRight.x -= stepSize
-                newConfig = True
-        elif key == ord('s'):
-            if bottomRight.y + stepSize <= 1:
-                topLeft.y += stepSize
-                bottomRight.y += stepSize
-                newConfig = True
-        elif key == ord('d'):
-            if bottomRight.x + stepSize <= 1:
-                topLeft.x += stepSize
-                bottomRight.x += stepSize
-                newConfig = True
-        elif key == ord('1'):
-            calculationAlgorithm = dai.SpatialLocationCalculatorAlgorithm.MEAN
-            print('Switching calculation algorithm to MEAN!')
-            newConfig = True
-        elif key == ord('2'):
-            calculationAlgorithm = dai.SpatialLocationCalculatorAlgorithm.MIN
-            print('Switching calculation algorithm to MIN!')
-            newConfig = True
-        elif key == ord('3'):
-            calculationAlgorithm = dai.SpatialLocationCalculatorAlgorithm.MAX
-            print('Switching calculation algorithm to MAX!')
-            newConfig = True
-        elif key == ord('4'):
-            calculationAlgorithm = dai.SpatialLocationCalculatorAlgorithm.MODE
-            print('Switching calculation algorithm to MODE!')
-            newConfig = True
-        elif key == ord('5'):
-            calculationAlgorithm = dai.SpatialLocationCalculatorAlgorithm.MEDIAN
-            print('Switching calculation algorithm to MEDIAN!')
-            newConfig = True
-
-        if newConfig:
-            config.roi = dai.Rect(topLeft, bottomRight)
-            config.calculationAlgorithm = calculationAlgorithm
-            cfg = dai.SpatialLocationCalculatorConfig()
-            cfg.addROI(config)
-            spatialCalcConfigInQueue.send(cfg)
-            newConfig = False
