@@ -22,6 +22,11 @@ xoutDepth.setStreamName("depth")
 xoutSpatialData.setStreamName("spatialData")
 xinSpatialCalcConfig.setStreamName("spatialCalcConfig")
 
+# XLinkOut for the RGB camera output
+xout_rgb = pipeline.createXLinkOut()
+xout_rgb.setStreamName("rgb")
+cam_rgb.preview.link(xout_rgb.input)
+
 # Properties
 monoLeft.setResolution(dai.MonoCameraProperties.SensorResolution.THE_400_P)
 monoLeft.setCamera("left")
@@ -57,7 +62,6 @@ xinSpatialCalcConfig.out.link(spatialLocationCalculator.inputConfig)
 
 # Connect to device and start pipeline
 with dai.Device(pipeline) as device:
-
     # Output queue will be used to get the depth frames from the outputs defined above
     depthQueue = device.getOutputQueue(name="depth", maxSize=4, blocking=False)
     spatialCalcQueue = device.getOutputQueue(name="spatialData", maxSize=4, blocking=False)
