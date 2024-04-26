@@ -22,6 +22,11 @@ xoutDepth.setStreamName("depth")
 xoutSpatialData.setStreamName("spatialData")
 xinSpatialCalcConfig.setStreamName("spatialCalcConfig")
 
+# Color camera as the output
+cam_rgb = pipeline.createColorCamera()
+cam_rgb.setPreviewSize(300, 300)  # Frame size
+cam_rgb.setInterleaved(False)
+
 # XLinkOut for the RGB camera output
 xout_rgb = pipeline.createXLinkOut()
 xout_rgb.setStreamName("rgb")
