@@ -39,7 +39,7 @@ rosdep install -i --from-path src --rosdistro humble -y
 ```
 To build the code, please run the following:
 ```bash
-colcon build --symlink-install && source install/setup.bash
+colcon build && source install/setup.bash
 ```
 
 # Running
