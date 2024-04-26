@@ -64,7 +64,7 @@ def main():
         COEFFS[volt] = tuple(find_coeffs(volt, plot=True))
 
     # Store coeffs in JSON file
-    with open("../coeffs.json", "w") as f:
+    with open("coeffs.json", "w") as f:
         json.dump(COEFFS, f)
 
     print(COEFFS)
