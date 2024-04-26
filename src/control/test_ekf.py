@@ -1,54 +1,56 @@
 import unittest
+import numpy as np
 import rclpy
 from rclpy.time import Time
-import numpy as np
-from math import radians
-from geometry_msgs.msg import Vector3
-from ekf_module import EKF, StateIndex  # Assuming your EKF class is in a file named ekf_module.py
-
-def create_imu_data(orientation, linear_acceleration):
-    """ Generate fake IMU data with given orientation (in degrees) and linear acceleration. """
-    rad_orientation = np.radians(orientation)  # Convert degrees to radians
-    return rad_orientation, linear_acceleration, np.ones(6)  # covariance matrix simplified as identity
-
-def create_dvl_data(velocity):
-    """ Generate fake DVL data with given velocity. """
-    return velocity, np.ones(3)  # covariance matrix simplified as identity
+from ekf import EKF, StateIndex  # Assuming EKF and StateIndex are in ekf.py
 
 class TestEKF(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        # Initialize ROS 2 client library only once before all tests
+        rclpy.init()
+
     def setUp(self):
-        rclpy.init(args=None)  # Initialize ROS 2
-        self.ekf = EKF(dvl_offset=np.array([0.1, 0.0, 0.0]), process_covariance=np.identity(15))
-        self.start_time = Time().now()  # Get current ROS 2 time
+        # Initialize the EKF object with zero DVL offset and identity matrix for process covariance
+        self.ekf = EKF(dvl_offset=np.zeros(3), process_covariance=np.identity(15))
 
-    def test_imu_integration(self):
-        """ Test IMU data handling. """
-        orientation = [0, 0, 0]  # yaw, pitch, roll in degrees
-        linear_acceleration = [0, 0, -9.81]  # gravity vector in m/s^2
-        imu_data = create_imu_data(orientation, linear_acceleration)
-        
-        # Simulate receiving an IMU measurement at current time
-        self.ekf.handle_imu_measurement(*imu_data, self.start_time)
+        # Mock a timestamp
+        self.timestamp = Time(seconds=int(1e9))  # 1e9 nanoseconds converted to a Time object
 
-        # Check the state update
-        position, velocity, acceleration, orientation, angular_velocity = self.ekf.get_state(self.start_time)
-        self.assertAlmostEqual(orientation.z, 0)
-        self.assertAlmostEqual(acceleration.z, -9.81)
+    def test_handle_imu_measurement(self):
+        # Provide some dummy orientation and linear acceleration data
+        orientation = np.array([0.0, 0.0, 0.0])  # Assume no initial rotation
+        linear_acceleration = np.array([0.0, 0.0, -9.81])  # Gravity
+        covariance = np.ones(6)  # Simplified covariance
 
-    def test_dvl_integration(self):
-        """ Test DVL data handling. """
-        velocity = [1, 0, 0]  # Moving forward at 1 m/s
-        dvl_data = create_dvl_data(velocity)
-        
-        # Simulate receiving a DVL measurement at current time
-        self.ekf.handle_dvl_measurement(*dvl_data, self.start_time)
+        # Call the method under test
+        self.ekf.handle_imu_measurement(orientation, linear_acceleration, covariance, self.timestamp)
 
-        # Check the state update
-        position, velocity, acceleration, orientation, angular_velocity = self.ekf.get_state(self.start_time)
-        self.assertAlmostEqual(velocity.x, 1)
+        # Retrieve the state and validate the expected values
+        position, velocity, acceleration, orientation, angular_velocity = self.ekf.get_state(self.timestamp)
+        np.testing.assert_array_almost_equal(acceleration.x, 0.0)
+        np.testing.assert_array_almost_equal(acceleration.y, 0.0)
+        np.testing.assert_array_almost_equal(acceleration.z, -9.81)
 
-    def tearDown(self):
+    def test_handle_dvl_measurement(self):
+        # Provide some dummy DVL data indicating velocity along x-axis
+        velocity = np.array([1.0, 0.0, 0.0])  # 1 m/s in the x direction
+        covariance = np.ones(3)  # Simplified covariance
+
+        # Call the method under test
+        self.ekf.handle_dvl_measurement(velocity, covariance, self.timestamp)
+
+        # Retrieve the state and validate the expected values
+        position, velocity, acceleration, orientation, angular_velocity = self.ekf.get_state(self.timestamp)
+        np.testing.assert_array_almost_equal(velocity.x, 1.0)
+        np.testing.assert_array_almost_equal(velocity.y, 0.0)
+        np.testing.assert_array_almost_equal(velocity.z, 0.0)
+
+    @classmethod
+    def tearDownClass(cls):
+        # Shut down ROS 2 client library after all tests
         rclpy.shutdown()
 
 if __name__ == '__main__':
     unittest.main()
+
