@@ -3,6 +3,7 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Int16
 from functools import partial
+from serial.tools import list_ports
 
 class PWMSubscriber(Node):
 
@@ -12,7 +13,12 @@ class PWMSubscriber(Node):
         self._thruster_ids = [f"thruster{i}" for i in range(1, 9)]
         self._subscribers = []
 
-        self.portName = serial.Serial("/dev/cu.usbmodem1101") # TODO REPLACE
+        port = self.find_serial_port()
+        if port:
+            self.portName = serial.Serial(port)
+        else:
+            raise RuntimeError("No serial port found")
+
         for i, thruster in enumerate(self._thruster_ids):
             subscriber = self.create_subscription(
                 Int16, 
@@ -28,7 +34,18 @@ class PWMSubscriber(Node):
 
         pwm_value = msg
         command = f"{thruster_number} {pwm_value}"
-        self.portName.write(command.encode())
+        try:
+            self.portName.write(command.encode())
+        except serial.SerialException as e:
+            self.get_logger().error(f"Serial error: {e}")
+    
+    def find_serial_port(self):
+        # Get a list of all available serial ports
+        ports = list_ports.comports()
+        for port in ports:
+            if "USB" in port.description:  # Check if it's a USB serial port
+                return port.device
+        return None
 
 def main(args=None):
     rclpy.init(args=args)
