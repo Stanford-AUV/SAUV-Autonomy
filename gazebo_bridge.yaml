@@ -1,0 +1,10 @@
+
+- ros_topic_name: "fin_pos"
+  gz_topic_name: "/model/tethys/joint/vertical_fins_joint/0/cmd_pos"
+  ros_type_name: "std_msgs/msg/Float64"
+  gz_type_name: "ignition.msgs.Double"
+
+- ros_topic_name: "propeller_thrust"
+  gz_topic_name: "/model/tethys/joint/propeller_joint/cmd_thrust"
+  ros_type_name: "std_msgs/msg/Float64"
+  gz_type_name: "ignition.msgs.Double"

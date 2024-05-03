@@ -4,6 +4,8 @@ Autonomy stack
 
 # Installation
 
+Update from initial instructions: Make sure to select in your VM more storage than 20 GB! You'll likely need at least 30 GB.
+
 1. Install VMWare Fusion (the free version, not the pro version).
 2. Download the Ubuntu ISO from https://cdimage.ubuntu.com/jammy/daily-live/current/jammy-desktop-arm64.iso.
 3. Open VMWare and drag the downloaded Debian ISO for installation.
@@ -34,6 +36,23 @@ In every new Terminal, run:
 ```bash
 source /opt/ros/humble/setup.bash
 export PYTHONPATH=${PYTHONPATH}:$PWD/src
+```
+
+## Gazebo Simulator
+
+To use the Gazebo simulator, follow these steps:
+1. Open a Terminal in the VM (not in VSCode! a GUI is necessary for this).
+2. Run the commands from the [Development](#development) section.
+3. Run the following command:
+```bash
+bash gazebo.sh
+```
+
+All topics exposed from Gazebo to ROS are located in `gazebo_bridge.yaml`.
+
+To test manually, avoid using Gazebo commands directly. Always prefer going through the bridge. For example, to manually set thrust:
+```bash
+ros2 topic pub propeller_thrust std_msgs/Float64 "data: -15"
 ```
 
 # Building
