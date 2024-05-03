@@ -18,7 +18,7 @@ setup(
     entry_points={
         "console_scripts": [
             f"thruster_manager = {package_name}.thruster_manager:main",
-            f"pwm_subscriber = {package_name}.arduino_subscriber.main"
+            f"pwm_subscriber = {package_name}.arduino_subscriber:main"
             ],
     },
 )
