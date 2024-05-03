@@ -26,6 +26,8 @@ echo "export PYTHONPATH=${PYTHONPATH}:$PWD/src" >> ~/.bashrc
 source ~/.bashrc
 printenv | grep -i ROS
 sudo apt-get install ros-${ROS_DISTRO}-ros-gz
+sudo apt-get install ros-${ROS_DISTRO}-ros-ign-bridge
+sudo apt-get install ros-${ROS_DISTRO}-teleop-twist-keyboard
 python3 -m pip install -r requirements.txt
 sudo rosdep init
 rosdep update
