@@ -1,32 +1,6 @@
 <?xml version="1.0" ?>
-<!--
-
-  Example showing various marine plugins working together for an
-  Autonomous Underwater Vehicle (AUV).
-
-  The following plugins are used:
-
-  * Buoyancy: applies buoyancy forces
-  * JointPositionController: controls the vertical and horizontal fins
-  * LiftDrag: generates forces on the vertical and horizontal fins
-  * Thruster: propels the vehicle
-  * Hydrodynamics: applies forces such as added mass, drag and coriolis
-
-  Example commands for the vehicle to move in a circle:
-
-  1. Move the rudder:
-
-      ign topic -t /model/tethys/joint/vertical_fins_joint/0/cmd_pos \
-         -m ignition.msgs.Double -p 'data: -0.17'
-
-  2. Propel the vehicle:
-
-      ign topic -t /model/tethys/joint/propeller_joint/cmd_thrust \
-         -m ignition.msgs.Double -p 'data: -31'
-
--->
 <sdf version="1.6">
-  <world name="buoyant_tethys">
+  <world name="buoyant_auv">
     <scene>
       <!-- For turquoise ambient -->
       <ambient>0.0 1.0 1.0</ambient>
@@ -75,73 +49,90 @@
 
     <include>
       <pose>0 0 1 0 0 1.57</pose>
-      <uri>tethys</uri>
-
-      <!-- Joint controllers -->
-      <plugin
-        filename="ignition-gazebo-joint-position-controller-system"
-        name="ignition::gazebo::systems::JointPositionController">
-        <joint_name>horizontal_fins_joint</joint_name>
-        <p_gain>0.1</p_gain>
-      </plugin>
-
-      <plugin
-        filename="ignition-gazebo-joint-position-controller-system"
-        name="ignition::gazebo::systems::JointPositionController">
-        <joint_name>vertical_fins_joint</joint_name>
-        <p_gain>0.1</p_gain>
-      </plugin>
+      <uri>auv</uri>
 
       <plugin
         filename="ignition-gazebo-thruster-system"
         name="ignition::gazebo::systems::Thruster">
-        <namespace>tethys</namespace>
-        <joint_name>propeller_joint</joint_name>
+        <namespace>auv</namespace>
+        <joint_name>thruster_1</joint_name>
         <thrust_coefficient>0.004422</thrust_coefficient>
         <fluid_density>1000</fluid_density>
         <propeller_diameter>0.2</propeller_diameter>
       </plugin>
 
-      <!-- Lift and drag -->
-
-      <!-- Vertical fin -->
       <plugin
-        filename="ignition-gazebo-lift-drag-system"
-        name="ignition::gazebo::systems::LiftDrag">
-        <air_density>1000</air_density>
-        <cla>4.13</cla>
-        <cla_stall>-1.1</cla_stall>
-        <cda>0.2</cda>
-        <cda_stall>0.03</cda_stall>
-        <alpha_stall>0.17</alpha_stall>
-        <a0>0</a0>
-        <area>0.0244</area>
-        <upward>0 1 0</upward>
-        <forward>1 0 0</forward>
-        <link_name>vertical_fins</link_name>
-        <cp>0 0 0</cp>
+        filename="ignition-gazebo-thruster-system"
+        name="ignition::gazebo::systems::Thruster">
+        <namespace>auv</namespace>
+        <joint_name>thruster_2</joint_name>
+        <thrust_coefficient>0.004422</thrust_coefficient>
+        <fluid_density>1000</fluid_density>
+        <propeller_diameter>0.2</propeller_diameter>
       </plugin>
 
-      <!-- Horizontal fin -->
       <plugin
-        filename="ignition-gazebo-lift-drag-system"
-        name="ignition::gazebo::systems::LiftDrag">
-        <air_density>1000</air_density>
-        <cla>4.13</cla>
-        <cla_stall>-1.1</cla_stall>
-        <cda>0.2</cda>
-        <cda_stall>0.03</cda_stall>
-        <alpha_stall>0.17</alpha_stall>
-        <a0>0</a0>
-        <area>0.0244</area>
-        <upward>0 0 1</upward>
-        <forward>1 0 0</forward>
-        <link_name>horizontal_fins</link_name>
-        <cp>0 0 0</cp>
+        filename="ignition-gazebo-thruster-system"
+        name="ignition::gazebo::systems::Thruster">
+        <namespace>auv</namespace>
+        <joint_name>thruster_3</joint_name>
+        <thrust_coefficient>0.004422</thrust_coefficient>
+        <fluid_density>1000</fluid_density>
+        <propeller_diameter>0.2</propeller_diameter>
       </plugin>
 
-      <!-- hydrodynamics plugin-->
       <plugin
+        filename="ignition-gazebo-thruster-system"
+        name="ignition::gazebo::systems::Thruster">
+        <namespace>auv</namespace>
+        <joint_name>thruster_4</joint_name>
+        <thrust_coefficient>0.004422</thrust_coefficient>
+        <fluid_density>1000</fluid_density>
+        <propeller_diameter>0.2</propeller_diameter>
+      </plugin>
+
+      <plugin
+        filename="ignition-gazebo-thruster-system"
+        name="ignition::gazebo::systems::Thruster">
+        <namespace>auv</namespace>
+        <joint_name>thruster_5</joint_name>
+        <thrust_coefficient>0.004422</thrust_coefficient>
+        <fluid_density>1000</fluid_density>
+        <propeller_diameter>0.2</propeller_diameter>
+      </plugin>
+
+      <plugin
+        filename="ignition-gazebo-thruster-system"
+        name="ignition::gazebo::systems::Thruster">
+        <namespace>auv</namespace>
+        <joint_name>thruster_6</joint_name>
+        <thrust_coefficient>0.004422</thrust_coefficient>
+        <fluid_density>1000</fluid_density>
+        <propeller_diameter>0.2</propeller_diameter>
+      </plugin>
+
+      <plugin
+        filename="ignition-gazebo-thruster-system"
+        name="ignition::gazebo::systems::Thruster">
+        <namespace>auv</namespace>
+        <joint_name>thruster_7</joint_name>
+        <thrust_coefficient>0.004422</thrust_coefficient>
+        <fluid_density>1000</fluid_density>
+        <propeller_diameter>0.2</propeller_diameter>
+      </plugin>
+
+      <plugin
+        filename="ignition-gazebo-thruster-system"
+        name="ignition::gazebo::systems::Thruster">
+        <namespace>auv</namespace>
+        <joint_name>thruster_8</joint_name>
+        <thrust_coefficient>0.004422</thrust_coefficient>
+        <fluid_density>1000</fluid_density>
+        <propeller_diameter>0.2</propeller_diameter>
+      </plugin>
+
+      <!-- Hydrodynamics plugin-->
+      <!-- <plugin
         filename="ignition-gazebo-hydrodynamics-system"
         name="ignition::gazebo::systems::Hydrodynamics">
         <link_name>base_link</link_name>
@@ -163,7 +154,7 @@
         <mQ>0</mQ>
         <nRabsR>-632.698957</nRabsR>
         <nR>0</nR>
-      </plugin>
+      </plugin> -->
 
     </include>
 
