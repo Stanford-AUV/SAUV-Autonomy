@@ -20,7 +20,7 @@
  * ***/
 
 #define DVL_PORT "/dev/ttyUSB0" // this must be found first!!
-#define BUFFER_SIZE 10000
+#define BUFFER_SIZE 256
 #define PUBLISH_TIME_MS 10
 
 class DvlPublisher : public rclcpp::Node
@@ -30,7 +30,7 @@ class DvlPublisher : public rclcpp::Node
     {
       publisher_ = this->create_publisher<geometry_msgs::msg::Twist>("/dvl/velocity", 10);
       timer_ = this->create_wall_timer(
-            std::chrono::microseconds(PUBLISH_TIME_MS),
+            std::chrono::milliseconds(PUBLISH_TIME_MS),
             std::bind(&DvlPublisher::timer_callback, this));
       init_port();
       init_decoder();
@@ -64,7 +64,17 @@ class DvlPublisher : public rclcpp::Node
         tty.c_cflag &= ~CSTOPB;             // 1 stop bit
         tty.c_cflag &= ~CSIZE;              // Mask character size bits
         tty.c_cflag |= CS8;                 // 8 data bits
+
+        tty.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG); // Raw input, no echo, no signals
+
+        // Setting Input Modes (c_iflag)
+        tty.c_iflag &= ~(IXON | IXOFF | IXANY); // Turn off software flow control
+        tty.c_iflag &= ~(IGNBRK | BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL); // Disable special handling of received bytes
+
+        // Setting Output Modes (c_oflag)
+        tty.c_oflag &= ~OPOST; // Raw output
         tcsetattr(fd_, TCSANOW, &tty);
+        
     }
 
     void init_decoder()
@@ -79,11 +89,11 @@ class DvlPublisher : public rclcpp::Node
       int data = read(fd_, buffer, sizeof(buffer));
 
       if (data > 0) {
-        std::stringstream ss;
-        for (int i = 0; i < data; ++i) {
-            ss << std::hex << std::setfill('0') << std::setw(2) << (int)buffer[i] << " ";
-        }
-        RCLCPP_INFO(this->get_logger(), "DATA: %s", ss.str().c_str());
+        // std::stringstream ss;
+        // for (int i = 0; i < data; ++i) {
+        //     ss << std::hex << std::setfill('0') << std::setw(2) << (int)buffer[i] << " ";
+        // }
+        // RCLCPP_INFO(this->get_logger(), "DATA: %s", ss.str().c_str());
 
         // std::stringstream ss2;
         // ss2 << std::hex << std::setfill('0') << std::setw(2) << (int)data << " ";
@@ -96,10 +106,7 @@ class DvlPublisher : public rclcpp::Node
           found = tdym::PDD_GetPD0Ensemble(decoder, &ens);
           if (found)
           {
-            RCLCPP_INFO(this->get_logger(), "FOUND!!!!!");
-            // RCLCPP_INFO(this->get_logger(), "FOUND!!!!!!!!");
-            // extract data from ensemble and send to geometry_msgs
-            // IGNORE BELOW
+            RCLCPP_INFO(this->get_logger(), "Ensemble found!");
 
             double velArray[FOUR_BEAMS];
             tdym::PDD_GetVesselVelocities(&ens, velArray);
@@ -107,15 +114,10 @@ class DvlPublisher : public rclcpp::Node
             velMessage.linear.x = velArray[0];
             velMessage.linear.y = velArray[1];
             velMessage.linear.z = velArray[2];
-            publisher_->publish(message);
-
-            timespec time = tdym::PDD_GetTimestamp(&ens)
-            std::stringstream ss;
-            ss << time.tv_sec;
-            RCLCPP_INFO(this->get_logger(), "%s", ss.str().c_str());
-            // IGNORE ABOVE
+            publisher_->publish(velMessage);
           }
         } while (found > 0);
+        
       }
     }
 
