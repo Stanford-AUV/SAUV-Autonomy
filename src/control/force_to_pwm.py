@@ -23,17 +23,17 @@ COEFFS = {
 TAM = np.empty(shape=(6, 8))
 
 # thruster positions in body frame
-# NOTE: these are not the official positions, to be changed later
+# NOTE: these are the Gazebo sim positions, to be changed later
 r_is = np.array(
     [
-        [1, 1, 0],  # thruster 1
-        [-1, 1, 0],  # ... 2
-        [-1, -1, 0],  # ... 3
-        [1, -1, 0],  # ... 4
-        [1, 1, 1],  # ... 5
-        [-1, 1, 1],  # ... 6
-        [-1, -1, 1],  # ... 7
-        [1, -1, 1],  # ... 8
+        [+0.5, +0.5, +0.5],  # thruster 1
+        [+0.5, +0.5, -0.5],  # ... 2
+        [+0.5, -0.5, +0.5],  # ... 3
+        [+0.5, -0.5, -0.5],  # ... 4
+        [-0.5, +0.5, +0.5],  # ... 5
+        [-0.5, +0.5, -0.5],  # ... 6
+        [-0.5, -0.5, +0.5],  # ... 7
+        [-0.5, -0.5, -0.5],  # ... 8
     ]
 )
 
@@ -41,16 +41,17 @@ r_is = np.array(
 # note: these point in the direction of positive thrust; z axis can be changed accordingly
 u_is = np.array(
     [
-        [-np.cos(np.pi / 4), np.sin(np.pi / 4), 0],
-        [np.cos(np.pi / 4), np.sin(np.pi / 4), 0],
-        [np.cos(np.pi / 4), -np.sin(np.pi / 4), 0],
-        [-np.cos(np.pi / 4), -np.sin(np.pi / 4), 0],
-        [-np.cos(np.pi / 4), np.sin(np.pi / 4), 0],
-        [np.cos(np.pi / 4), np.sin(np.pi / 4), 0],
-        [np.cos(np.pi / 4), -np.sin(np.pi / 4), 0],
-        [-np.cos(np.pi / 4), -np.sin(np.pi / 4), 0],
+        [-1, -1, -1],
+        [-1, -1, +1],
+        [-1, +1, -1],
+        [-1, +1, +1],
+        [+1, -1, -1],
+        [+1, -1, +1],
+        [+1, +1, -1],
+        [+1, +1, +1],
     ]
 )
+u_is = u_is / np.linalg.norm(u_is, axis=1)[:, None]
 
 TAM[:3, :] = u_is.T
 TAM[3:, :] = np.cross(r_is, u_is).T
@@ -103,11 +104,8 @@ def thrust_to_pwm(thrust, voltage=14.8):
     return np.array(np.round(pwm), dtype=int)
 
 
-def total_force_to_individual_pwm(desired_wrench):
-    """Converts a desired force to motor PWM values.
-    Force is a 6x1 vector with the desired force in the x, y, z, roll, pitch, and yaw directions.
-    """
-    thrusts = total_force_to_individual_thrusts(desired_wrench)
+def thrusts_to_pwm(thrusts):
+    """Converts a desired array of thrusts to motor PWM values."""
     return np.array([thrust_to_pwm(thrust) for thrust in thrusts])
 
 
