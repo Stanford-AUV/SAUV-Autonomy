@@ -3,6 +3,7 @@ from rclpy.node import Node
 from std_msgs.msg import Float64MultiArray
 import numpy as np
 
+# Prune state.msg to just the position and quaternion (i.e. 'pose')
 def prune_state(state) :
     pose = np.array([
         state.position.x,
@@ -17,7 +18,6 @@ def prune_state(state) :
 class PIDController(Node) :
     
     def __init__(self, kP, kD, kI, p_start_i) :
-
         # Gains are a diagonal matrix
         self.kP_ = kP
         self.kD_ = kD
@@ -63,11 +63,6 @@ class PIDController(Node) :
         self.timer_period_ = .01 # seconds (10ms / 100Hz)
         self.timer = self.create_timer(self.timer_period_, self.publish_output)
 
-    def reset(self) :
-        self.integral = np.zeros(self.dimension_)
-        self.prev_error = np.zeros(self.dimension_)
-        self.desired = self.state
-
     def pose_callback(self, msg) :
         self.pose = np.array(prune_state(msg.data))
         self.get_logger().info('Received pose: %s' % self.pose)
@@ -89,7 +84,7 @@ class PIDController(Node) :
         # Wrench is a linear combination of error, derivative, and integral vectors
         wrench = (self.kP_ @ error) + (self.kD_ @ derivative) + (self.kI_ @ self.integral) 
 
-        # current error becomes previous error in the next time step
+        # Current error becomes previous error in the next time step
         self.prev_error = error
         
         # Publish the wrench
