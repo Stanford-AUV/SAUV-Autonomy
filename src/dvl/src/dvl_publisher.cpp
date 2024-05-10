@@ -12,12 +12,16 @@
 #include "std_msgs/msg/string.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 
-/* This example creates a subclass of Node and uses std::bind() to register a
-* member function as a callback from the timer. */
+/***
+ * 
+ * NOTE: you WILL need to add permissions to access the USB port! 
+ * > sudo usermod -a -G dialout $(whoami)
+ * 
+ * ***/
 
 #define DVL_PORT "/dev/ttyUSB0" // this must be found first!!
-#define BUFFER_SIZE 256
-#define PUBLISH_TIME_MS 100
+#define BUFFER_SIZE 10000
+#define PUBLISH_TIME_MS 10
 
 class DvlPublisher : public rclcpp::Node
 {
@@ -26,7 +30,7 @@ class DvlPublisher : public rclcpp::Node
     {
       publisher_ = this->create_publisher<geometry_msgs::msg::Twist>("/dvl/velocity", 10);
       timer_ = this->create_wall_timer(
-            std::chrono::milliseconds(PUBLISH_TIME_MS),
+            std::chrono::microseconds(PUBLISH_TIME_MS),
             std::bind(&DvlPublisher::timer_callback, this));
       init_port();
       init_decoder();
@@ -45,8 +49,8 @@ class DvlPublisher : public rclcpp::Node
   private:
     void init_port()
     {
-        fd_ = open(DVL_PORT, O_RDWR | O_NOCTTY | O_NDELAY);
-        if (fd_ == -1) {
+        fd_ = open(DVL_PORT, O_RDWR | O_NOCTTY);
+        if (fd_ < 0) {
             RCLCPP_ERROR(this->get_logger(), "Unable to open port");
             return;
         }
@@ -71,22 +75,44 @@ class DvlPublisher : public rclcpp::Node
 
     void timer_callback()
     {
+      std::memset(buffer, 0, BUFFER_SIZE);
       int data = read(fd_, buffer, sizeof(buffer));
 
       if (data > 0) {
-        tdym::PDD_AddDecoderData(decoder, buffer, data);
+        std::stringstream ss;
+        for (int i = 0; i < data; ++i) {
+            ss << std::hex << std::setfill('0') << std::setw(2) << (int)buffer[i] << " ";
+        }
+        RCLCPP_INFO(this->get_logger(), "DATA: %s", ss.str().c_str());
+
+        // std::stringstream ss2;
+        // ss2 << std::hex << std::setfill('0') << std::setw(2) << (int)data << " ";
+        // RCLCPP_INFO(this->get_logger(), "SIZE: %s", ss2.str().c_str());
+
+        tdym::PDD_AddDecoderData(decoder, buffer, (int)data);
         int found = 0;
         do
         {
           found = tdym::PDD_GetPD0Ensemble(decoder, &ens);
           if (found)
           {
+            RCLCPP_INFO(this->get_logger(), "FOUND!!!!!");
+            // RCLCPP_INFO(this->get_logger(), "FOUND!!!!!!!!");
             // extract data from ensemble and send to geometry_msgs
             // IGNORE BELOW
-            geometry_msgs::msg::Twist message;
-            message.linear.x = 3.1415;
-            message.angular.z = -3.1415;
+
+            double velArray[FOUR_BEAMS];
+            tdym::PDD_GetVesselVelocities(&ens, velArray);
+            geometry_msgs::msg::Twist velMessage; // NOTE: not sure what the order or meaning of the four means are!
+            velMessage.linear.x = velArray[0];
+            velMessage.linear.y = velArray[1];
+            velMessage.linear.z = velArray[2];
             publisher_->publish(message);
+
+            timespec time = tdym::PDD_GetTimestamp(&ens)
+            std::stringstream ss;
+            ss << time.tv_sec;
+            RCLCPP_INFO(this->get_logger(), "%s", ss.str().c_str());
             // IGNORE ABOVE
           }
         } while (found > 0);
