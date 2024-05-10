@@ -21,7 +21,7 @@ class PIDController :
         self.integral = np.zeros(self.dimension_)
         self.prev_error = np.zeros(self.dimension_)
 
-    def get_state(self, msg) :
+    def set_state(self, msg) :
         self.state = msg
 
     def update(self, desired, dt) :
@@ -45,10 +45,9 @@ class PIDController :
 class PIDSubscriber(Node) :
 
     def __init__(self, controller) :
-        # Pass name of the subscriber
-        super().__init__('pid_subscriber')
+        super().__init__('pose_subscriber')
 
-        self.subscription = self.create_subscription(
+        self.subscription_ = self.create_subscription(
             np.array(), 
             'pose', 
             self.pid_callback,
@@ -58,18 +57,26 @@ class PIDSubscriber(Node) :
     def pid_callback(self, msg) :
         pose = np.array(msg.data)
         self.get_logger().info('Received pose: %s' % pose)
-        # Call the PID controller and publish the output
-        # pid_controller.update(pose)
+        controller.set_state(pose)
 
     
 
 class PIDPublisher(Node) :
 
     def __init__(self) :
-        super().__init__('pid_publisher')
-        self.initialized_ = False
+        super().__init__('output_publisher')
+        self.publisher_ = self.create_publisher(
+            Float64MultiArray,
+            'controller_output',
+            10
+        )
 
-        self.output_pub_ = self.create_publisher()
+        def publish_output(self, output) :
+            msg = Float64MultiArray()
+            msg.data = output
+            self.publisher_.publish(msg)
+            self.get_logger().info('Publishing output: %s' % output)
+
 
 def main(args=None) :
     rclpy.init(args=args)
@@ -80,8 +87,24 @@ def main(args=None) :
     kI = np.diag(np.array([0, 0, 0, 0, 0, 0]))
     p_start_i = np.diag(np.array([0, 0, 0, 0, 0, 0]))
 
+    # Create global controller object
     global controller 
     controller = PIDController(kP, kD, kI, p_start_i)
+
+    # Create pose subscriber and output publisher
+    pose_subscriber = PIDSubscriber()
+    output_publisher = PIDPublisher()
+
+    try :
+        rclpy.spin(pose_subscriber)
+        rclpy.spin(output_publisher)
+    except KeyboardInterrupt :
+        pass
+
+    pose_subscriber.destroy_node()
+    output_publisher.destroy_node()
+    
+    rclpy.shutdown()
 
 
 if __name__ == '__main__' :
