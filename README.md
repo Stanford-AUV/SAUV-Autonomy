@@ -52,7 +52,7 @@ All topics exposed from Gazebo to ROS are located in `gazebo_bridge.yaml`.
 
 To test manually, avoid using Gazebo commands directly. Always prefer going through the bridge. For example, to manually set thrust:
 ```bash
-ros2 topic pub thruster_1 std_msgs/Float64 "data: -15"
+ros2 topic pub gz/thruster_1 std_msgs/Float64 "data: -15"
 ```
 
 # Building

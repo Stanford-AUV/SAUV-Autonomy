@@ -52,7 +52,7 @@
     </light>
 
     <include>
-      <pose>0 0 1 0 0 1.57</pose>
+      <pose>0 0 1 0 0 0</pose>
       <uri>auv</uri>
 
       <plugin
