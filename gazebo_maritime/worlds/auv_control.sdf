@@ -33,6 +33,10 @@
       name="ignition::gazebo::systems::Imu">
     </plugin>
 
+    <plugin filename="libignition-gazebo-altimeter-system.so"
+      name="ignition::gazebo::systems::Altimeter">
+    </plugin>
+
     <light type="directional" name="sun">
       <cast_shadows>true</cast_shadows>
       <pose>0 0 10 0 0 0</pose>

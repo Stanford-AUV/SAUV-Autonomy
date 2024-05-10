@@ -51,3 +51,9 @@
   ros_type_name: "sensor_msgs/msg/Imu"
   gz_type_name: "gz.msgs.IMU"
   direction: GZ_TO_ROS
+
+- ros_topic_name: "depth"
+  gz_topic_name: "/depth"
+  ros_type_name: "ros_gz_interfaces/msg/Altimeter"
+  gz_type_name: "gz.msgs.Altimeter"
+  direction: GZ_TO_ROS
