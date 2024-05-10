@@ -28,6 +28,11 @@ class ThrusterManager(Node):
 
     def timer_callback(self):
         testing_wrench = np.array([1, 0, 0, 0, 0, 0])
+        # testing_wrench = np.array([0, 1, 0, 0, 0, 0])
+        # testing_wrench = np.array([0, 0, 1, 0, 0, 0])
+        # testing_wrench = np.array([0, 0, 0, 0.01, 0, 0])
+        # testing_wrench = np.array([0, 0, 0, 0, 0.01, 0])
+        # testing_wrench = np.array([0, 0, 0, 0, 0, 0.01])
         thrusts = total_force_to_individual_thrusts(testing_wrench)
         print(thrusts)
         pwms = thrusts_to_pwm(thrusts)

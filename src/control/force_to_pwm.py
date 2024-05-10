@@ -41,14 +41,14 @@ r_is = np.array(
 # note: these point in the direction of positive thrust; z axis can be changed accordingly
 u_is = np.array(
     [
-        [-1, -1, -1],
-        [-1, -1, +1],
-        [-1, +1, -1],
-        [-1, +1, +1],
-        [+1, -1, -1],
-        [+1, -1, +1],
-        [+1, +1, -1],
-        [+1, +1, +1],
+        [-1, 1, 0],
+        [0, 0, 1],
+        [-1, -1, 0],
+        [0, 0, 1],
+        [-1, -1, 0],
+        [0, 0, 1],
+        [-1, 1, 0],
+        [0, 0, 1],
     ]
 )
 u_is = u_is / np.linalg.norm(u_is, axis=1)[:, None]
