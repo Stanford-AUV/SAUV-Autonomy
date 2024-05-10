@@ -2,17 +2,22 @@ import rclpy
 from rclpy.node import Node
 import numpy as np
 
-def findClosest() :
-    return
+class PurePursuit(Node) :
 
-def circleIntersect() :
-    return
+    def __init__(self) :
+        return
 
-def lookaheadPoint() :
-    return
+    def findClosest(self) :
+        return
 
-def findLookaheadCurvature() :
-    return
+    def circleIntersect(self) :
+        return
 
-def follow() :
-    return
+    def lookaheadPoint(self) :
+        return
+
+    def findLookaheadCurvature(self) :
+        return
+
+    def follow(self) :
+        return
