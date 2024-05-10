@@ -5,7 +5,7 @@
         <link name='base_link'>
             <pose>0 0 0 0 0 0</pose>
 			<inertial>
-				<mass>1000</mass>
+				<mass>995.2</mass>
 				<inertia>
 				<ixx>3.000000</ixx>
 				<ixy>0.000000</ixy>
@@ -44,145 +44,273 @@
         </link>
 
         <!-- Thruster Links -->
-        <link name='box_1'>
-            <pose>0.5 0.5 0.5 0 0 0</pose> <!-- Position adjustment needed -->
-            <visual name='thruster_visual_1'>
+        <link name="box_1">
+            <pose>0.5 0.5 0.5 -0.7853981634 0 -0.7853981634</pose>
+            <visual name="visual_side_1">
                 <geometry>
                     <box>
-                        <size>0.1 0.1 0.1</size>
+                        <size>0.2 0.2 0.01</size>
                     </box>
                 </geometry>
+                <material>
+                    <ambient>1 0 0 1</ambient>  <!-- Red color -->
+                    <diffuse>1 0 0 1</diffuse>
+                </material>
             </visual>
-            <collision name='thruster_collision_1'>
+            <visual name="visual_side_2">
+                <pose>0 0 -0.01 0 0 0</pose>
                 <geometry>
                     <box>
-                        <size>0.1 0.1 0.1</size>
+                        <size>0.2 0.2 0.01</size>
+                    </box>
+                </geometry>
+                <material>
+                    <ambient>0 0 1 1</ambient>  <!-- Blue color -->
+                    <diffuse>0 0 1 1</diffuse>
+                </material>
+            </visual>
+            <collision name="collision">
+                <geometry>
+                    <box>
+                        <size>0.2 0.01 0.2</size>
                     </box>
                 </geometry>
             </collision>
         </link>
 
 		<link name='box_2'>
-            <pose>0.5 0.5 -0.5 0 0 0</pose> <!-- Position adjustment needed -->
-            <visual name='thruster_visual_2'>
+            <pose>0.5 0.5 -0.5 3.1415926536 -0.7853981634 0.7853981634</pose> <!-- Position adjustment needed -->
+            <visual name="visual_side_1">
                 <geometry>
                     <box>
-                        <size>0.1 0.1 0.1</size>
+                        <size>0.2 0.2 0.01</size>
                     </box>
                 </geometry>
+                <material>
+                    <ambient>1 0 0 1</ambient>  <!-- Red color -->
+                    <diffuse>1 0 0 1</diffuse>
+                </material>
             </visual>
-            <collision name='thruster_collision_2'>
+            <visual name="visual_side_2">
+                <pose>0 0 -0.01 0 0 0</pose>
                 <geometry>
                     <box>
-                        <size>0.1 0.1 0.1</size>
+                        <size>0.2 0.2 0.01</size>
+                    </box>
+                </geometry>
+                <material>
+                    <ambient>0 0 1 1</ambient>  <!-- Blue color -->
+                    <diffuse>0 0 1 1</diffuse>
+                </material>
+            </visual>
+            <collision name="collision">
+                <geometry>
+                    <box>
+                        <size>0.2 0.01 0.2</size>
                     </box>
                 </geometry>
             </collision>
         </link>
 
 		<link name='box_3'>
-            <pose>0.5 -0.5 0.5 0 0 0</pose> <!-- Position adjustment needed -->
-            <visual name='thruster_visual_3'>
+            <pose>0.5 -0.5 0.5 0 0.7853981634 -0.7853981634</pose> <!-- Position adjustment needed -->
+            <visual name="visual_side_1">
                 <geometry>
                     <box>
-                        <size>0.1 0.1 0.1</size>
+                        <size>0.2 0.2 0.01</size>
                     </box>
                 </geometry>
+                <material>
+                    <ambient>1 0 0 1</ambient>  <!-- Red color -->
+                    <diffuse>1 0 0 1</diffuse>
+                </material>
             </visual>
-            <collision name='thruster_collision_3'>
+            <visual name="visual_side_2">
+                <pose>0 0 -0.01 0 0 0</pose>
                 <geometry>
                     <box>
-                        <size>0.1 0.1 0.1</size>
+                        <size>0.2 0.2 0.01</size>
+                    </box>
+                </geometry>
+                <material>
+                    <ambient>0 0 1 1</ambient>  <!-- Blue color -->
+                    <diffuse>0 0 1 1</diffuse>
+                </material>
+            </visual>
+            <collision name="collision">
+                <geometry>
+                    <box>
+                        <size>0.2 0.01 0.2</size>
                     </box>
                 </geometry>
             </collision>
         </link>
 
 		<link name='box_4'>
-            <pose>0.5 -0.5 -0.5 0 0 0</pose> <!-- Position adjustment needed -->
-            <visual name='thruster_visual_4'>
+            <pose>0.5 -0.5 -0.5 3.1415926536 -0.7853981634 -0.7853981634</pose> <!-- Position adjustment needed -->
+            <visual name="visual_side_1">
                 <geometry>
                     <box>
-                        <size>0.1 0.1 0.1</size>
+                        <size>0.2 0.2 0.01</size>
                     </box>
                 </geometry>
+                <material>
+                    <ambient>1 0 0 1</ambient>  <!-- Red color -->
+                    <diffuse>1 0 0 1</diffuse>
+                </material>
             </visual>
-            <collision name='thruster_collision_4'>
+            <visual name="visual_side_2">
+                <pose>0 0 -0.01 0 0 0</pose>
                 <geometry>
                     <box>
-                        <size>0.1 0.1 0.1</size>
+                        <size>0.2 0.2 0.01</size>
+                    </box>
+                </geometry>
+                <material>
+                    <ambient>0 0 1 1</ambient>  <!-- Blue color -->
+                    <diffuse>0 0 1 1</diffuse>
+                </material>
+            </visual>
+            <collision name="collision">
+                <geometry>
+                    <box>
+                        <size>0.2 0.01 0.2</size>
                     </box>
                 </geometry>
             </collision>
         </link>
 
 		<link name='box_5'>
-            <pose>-0.5 0.5 0.5 0 0 0</pose> <!-- Position adjustment needed -->
-            <visual name='thruster_visual_5'>
+            <pose>-0.5 0.5 0.5 0 -0.7853981634 -0.7853981634</pose> <!-- Position adjustment needed -->
+            <visual name="visual_side_1">
                 <geometry>
                     <box>
-                        <size>0.1 0.1 0.1</size>
+                        <size>0.2 0.2 0.01</size>
                     </box>
                 </geometry>
+                <material>
+                    <ambient>1 0 0 1</ambient>  <!-- Red color -->
+                    <diffuse>1 0 0 1</diffuse>
+                </material>
             </visual>
-            <collision name='thruster_collision_5'>
+            <visual name="visual_side_2">
+                <pose>0 0 -0.01 0 0 0</pose>
                 <geometry>
                     <box>
-                        <size>0.1 0.1 0.1</size>
+                        <size>0.2 0.2 0.01</size>
+                    </box>
+                </geometry>
+                <material>
+                    <ambient>0 0 1 1</ambient>  <!-- Blue color -->
+                    <diffuse>0 0 1 1</diffuse>
+                </material>
+            </visual>
+            <collision name="collision">
+                <geometry>
+                    <box>
+                        <size>0.2 0.01 0.2</size>
                     </box>
                 </geometry>
             </collision>
         </link>
 
 		<link name='box_6'>
-            <pose>-0.5 0.5 -0.5 0 0 0</pose> <!-- Position adjustment needed -->
-            <visual name='thruster_visual_6'>
+            <pose>-0.5 0.5 -0.5 3.1415926536 0.7853981634 -0.7853981634</pose> <!-- Position adjustment needed -->
+            <visual name="visual_side_1">
                 <geometry>
                     <box>
-                        <size>0.1 0.1 0.1</size>
+                        <size>0.2 0.2 0.01</size>
                     </box>
                 </geometry>
+                <material>
+                    <ambient>1 0 0 1</ambient>  <!-- Red color -->
+                    <diffuse>1 0 0 1</diffuse>
+                </material>
             </visual>
-            <collision name='thruster_collision_6'>
+            <visual name="visual_side_2">
+                <pose>0 0 -0.01 0 0 0</pose>
                 <geometry>
                     <box>
-                        <size>0.1 0.1 0.1</size>
+                        <size>0.2 0.2 0.01</size>
+                    </box>
+                </geometry>
+                <material>
+                    <ambient>0 0 1 1</ambient>  <!-- Blue color -->
+                    <diffuse>0 0 1 1</diffuse>
+                </material>
+            </visual>
+            <collision name="collision">
+                <geometry>
+                    <box>
+                        <size>0.2 0.01 0.2</size>
                     </box>
                 </geometry>
             </collision>
         </link>
 
 		<link name='box_7'>
-            <pose>-0.5 -0.5 0.5 0 0 0</pose> <!-- Position adjustment needed -->
-            <visual name='thruster_visual_7'>
+            <pose>-0.5 -0.5 0.5 0.7853981634 0 -0.7853981634</pose> <!-- Position adjustment needed -->
+            <visual name="visual_side_1">
                 <geometry>
                     <box>
-                        <size>0.1 0.1 0.1</size>
+                        <size>0.2 0.2 0.01</size>
                     </box>
                 </geometry>
+                <material>
+                    <ambient>1 0 0 1</ambient>  <!-- Red color -->
+                    <diffuse>1 0 0 1</diffuse>
+                </material>
             </visual>
-            <collision name='thruster_collision_7'>
+            <visual name="visual_side_2">
+                <pose>0 0 -0.01 0 0 0</pose>
                 <geometry>
                     <box>
-                        <size>0.1 0.1 0.1</size>
+                        <size>0.2 0.2 0.01</size>
+                    </box>
+                </geometry>
+                <material>
+                    <ambient>0 0 1 1</ambient>  <!-- Blue color -->
+                    <diffuse>0 0 1 1</diffuse>
+                </material>
+            </visual>
+            <collision name="collision">
+                <geometry>
+                    <box>
+                        <size>0.2 0.01 0.2</size>
                     </box>
                 </geometry>
             </collision>
         </link>
 
 		<link name='box_8'>
-            <pose>-0.5 -0.5 -0.5 0 0 0</pose> <!-- Position adjustment needed -->
-            <visual name='thruster_visual_8'>
+            <pose>-0.5 -0.5 -0.5 3.1415926536 0.7853981634 0.7853981634</pose> <!-- Position adjustment needed -->
+            <visual name="visual_side_1">
                 <geometry>
                     <box>
-                        <size>0.1 0.1 0.1</size>
+                        <size>0.2 0.2 0.01</size>
                     </box>
                 </geometry>
+                <material>
+                    <ambient>1 0 0 1</ambient>  <!-- Red color -->
+                    <diffuse>1 0 0 1</diffuse>
+                </material>
             </visual>
-            <collision name='thruster_collision_8'>
+            <visual name="visual_side_2">
+                <pose>0 0 -0.01 0 0 0</pose>
                 <geometry>
                     <box>
-                        <size>0.1 0.1 0.1</size>
+                        <size>0.2 0.2 0.01</size>
+                    </box>
+                </geometry>
+                <material>
+                    <ambient>0 0 1 1</ambient>  <!-- Blue color -->
+                    <diffuse>0 0 1 1</diffuse>
+                </material>
+            </visual>
+            <collision name="collision">
+                <geometry>
+                    <box>
+                        <size>0.2 0.01 0.2</size>
                     </box>
                 </geometry>
             </collision>
@@ -195,6 +323,7 @@
 			<child>box_1</child>
 			<axis>
 				<xyz>-1 -1 -1</xyz>
+                <use_parent_model_frame>1</use_parent_model_frame>
 				<limit>
 					<lower>-1e+12</lower>
 					<upper>1e+12</upper>
@@ -210,6 +339,7 @@
 			<child>box_2</child>
 			<axis>
 				<xyz>-1 -1 1</xyz>
+                <use_parent_model_frame>1</use_parent_model_frame>
 				<limit>
 					<lower>-1e+12</lower>
 					<upper>1e+12</upper>
@@ -225,6 +355,7 @@
 			<child>box_3</child>
 			<axis>
 				<xyz>-1 1 -1</xyz>
+                <use_parent_model_frame>1</use_parent_model_frame>
 				<limit>
 					<lower>-1e+12</lower>
 					<upper>1e+12</upper>
@@ -240,6 +371,7 @@
 			<child>box_4</child>
 			<axis>
 				<xyz>-1 1 1</xyz>
+                <use_parent_model_frame>1</use_parent_model_frame>
 				<limit>
 					<lower>-1e+12</lower>
 					<upper>1e+12</upper>
@@ -255,6 +387,7 @@
 			<child>box_5</child>
 			<axis>
 				<xyz>1 -1 -1</xyz>
+                <use_parent_model_frame>1</use_parent_model_frame>
 				<limit>
 					<lower>-1e+12</lower>
 					<upper>1e+12</upper>
@@ -270,6 +403,7 @@
 			<child>box_6</child>
 			<axis>
 				<xyz>1 -1 1</xyz>
+                <use_parent_model_frame>1</use_parent_model_frame>
 				<limit>
 					<lower>-1e+12</lower>
 					<upper>1e+12</upper>
@@ -285,6 +419,7 @@
 			<child>box_7</child>
 			<axis>
 				<xyz>1 1 -1</xyz>
+                <use_parent_model_frame>1</use_parent_model_frame>
 				<limit>
 					<lower>-1e+12</lower>
 					<upper>1e+12</upper>
@@ -300,6 +435,7 @@
 			<child>box_8</child>
 			<axis>
 				<xyz>1 1 1</xyz>
+                <use_parent_model_frame>1</use_parent_model_frame>
 				<limit>
 					<lower>-1e+12</lower>
 					<upper>1e+12</upper>
