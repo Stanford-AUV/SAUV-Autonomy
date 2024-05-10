@@ -20,6 +20,9 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+        'pose_talker = ControlTest.pose_publisher:main',
+        'desired_talker = ControlTest.desired_publisher:main', 
+        'controller = ControlTest.controller:main'
         ],
     },
 )
