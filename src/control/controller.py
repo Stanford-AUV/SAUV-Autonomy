@@ -96,3 +96,28 @@ class PIDController(Node) :
         msg = Float64MultiArray(data = wrench)
         self.publisher_.publish(msg)
         self.get_logger().info('Publishing output %s' % msg.data)
+
+def main(args=none) :
+    rclpy.init(args=args)
+
+    # Initialize PID gains
+    #                      x, y, z, r, p, y
+    kP = np.diag(np.array([1, 1, 1, 1, 1, 1]))
+    kD = np.diag(np.array([0, 0, 0, 0, 0, 0]))
+    kI = np.diag(np.array([0, 0, 0, 0, 0, 0]))
+    p_start_i = np.diag(np.array([0, 0, 0, 0, 0, 0]))
+
+    controller_node = PIDController(kP, kD, kI, p_start_i)
+
+    try :
+        rclpy.spin(controller_node)
+    except KeyboardInterrupt :
+        pass
+    
+    # Cleanup
+    controller_node.destroy_node()
+    
+    rclpy.shutdown()
+
+if __name__ == '__main__' :
+    main()
