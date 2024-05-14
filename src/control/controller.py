@@ -2,6 +2,7 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float64MultiArray
 import numpy as np
+import threading
 
 # Prune state.msg to just the position and quaternion (i.e. 'pose')
 def prune_state(state) :
@@ -14,6 +15,16 @@ def prune_state(state) :
         state.orientation.z  # yaw
     ])
 
+def clamp(value, limits) :
+    lower, upper = limits
+    if value is None:
+        return None
+    elif(upper is not None) and (value > upper) :
+        return upper
+    elif(lower is not None) and (value < lower) :
+        return lower
+    return value
+
 
 class PIDController(Node) :
     
@@ -24,7 +35,7 @@ class PIDController(Node) :
         self.kI_ = kI
         self.p_start_i = p_start_i
 
-        self.dimension_ = 6 # Position + quaternion
+        self.dimension_ = 6 # dim(matrix)
 
         # Initialize controller iterables
         # At first time step everything is 0
@@ -32,8 +43,8 @@ class PIDController(Node) :
         self.prev_error = np.zeros(self.dimension_)
 
         # Declare current and desired pose variables
-        self.pose
-        self.desired
+        self.pose = np.zeros(self.dimension_)
+        self.desired = np.zeros(self.dimension_)
 
         # Initialize state subscriber
         super().__init__('state_subscriber')
@@ -63,13 +74,19 @@ class PIDController(Node) :
         self.timer_period_ = .01 # seconds (10ms / 100Hz)
         self.timer = self.create_timer(self.timer_period_, self.publish_output)
 
+        # Create mutex
+        self.running = False
+        self.lock = threading.Lock()
+
     def pose_callback(self, msg) :
-        self.pose = np.array(prune_state(msg.data))
-        self.get_logger().info('Received pose: %s' % self.pose)
-    
+        with self.lock :
+            self.pose = np.array(prune_state(msg.data))
+            self.get_logger().info('Received pose: %s' % self.pose)
+        
     def desired_callback(self, msg) :
-        self.desired = np.array(prune_state(msg.data))
-        self.get_logger().info('Received desired pose: %s' % self.desired)
+        with self.lock :
+            self.desired = np.array(prune_state(msg.data))
+            self.get_logger().info('Received desired pose: %s' % self.desired)
 
     def update_wrench(self) :
         error = self.desired - self.pose
@@ -91,6 +108,11 @@ class PIDController(Node) :
         msg = Float64MultiArray(data = wrench)
         self.publisher_.publish(msg)
         self.get_logger().info('Publishing output %s' % msg.data)
+
+    def reset(self) :
+        with self.lock :
+            self.integral = 0
+            self.prev_error = 0
 
 
 def main(args=none) :
