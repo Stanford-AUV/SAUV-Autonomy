@@ -1,6 +1,8 @@
 import rclpy
 from rclpy.node import Node
+from rclpy_interfaces.msg import SetParametersResult
 from std_msgs.msg import Float64MultiArray
+from std_srvs.srv import Empty
 import numpy as np
 import threading
 
@@ -77,6 +79,34 @@ class PIDController(Node) :
         # Create mutex
         self.running = False
         self.lock = threading.Lock()
+        
+        # Declare parameters and allow for runtime reconfiguration
+        self.declare_parameters(
+            namespace = '', 
+            parameters = [
+                ('kP', self.kP_),
+                ('kD', self.kD_),
+                ('kI', self.kI_),
+                ('p_start_i', self.p_start_i)
+            ]
+        )
+
+        # Services
+        self.reset_service = self.create_service(Empty, 'reset_controller', self.handle_reset)
+
+        # Add a parameter callback
+        self.add_on_set_parameters_callback(self.parameters_callback)
+
+    def parameters_callback(self, params) :
+        for param in params :
+            if param.name == 'kP' :
+                self.kP_ = param.value
+            if param.name == 'kD' :
+                self.kD_ = param.value
+            if param.name == 'kI' :
+                self.kI_ = param.value
+            if param.name == 'p_start_i' :
+                self.p_start_i_ = param.value
 
     def pose_callback(self, msg) :
         with self.lock :
@@ -113,6 +143,11 @@ class PIDController(Node) :
         with self.lock :
             self.integral = 0
             self.prev_error = 0
+
+    def handle_reset(self, request, response) :
+        self.get_logger().info('Resetting controller settings.')
+        self.reset()
+        return response
 
 
 def main(args=none) :
