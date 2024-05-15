@@ -9,7 +9,7 @@ class DesiredPublisher(Node) :
         super().__init__('desired_publisher')
         self.publisher_ = self.create_publisher(
             Float64MultiArray,
-            'desired',
+            'desired_pose',
             10)
         
         timer_period = 10 # seconds

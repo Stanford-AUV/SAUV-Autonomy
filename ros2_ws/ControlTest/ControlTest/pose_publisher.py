@@ -9,7 +9,7 @@ class PosePublisher(Node) :
         super().__init__('output_publisher')
         self.publisher_ = self.create_publisher(
             Float64MultiArray,
-            'pose',
+            'state',
             10
         )
         timer_period = 10 # seconds
