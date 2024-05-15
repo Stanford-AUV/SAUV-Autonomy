@@ -20,7 +20,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'my_node = my_package.my_node:main'
+            'pose_publisher = my_package.my_node:main',
+            
         ],
     },
 )

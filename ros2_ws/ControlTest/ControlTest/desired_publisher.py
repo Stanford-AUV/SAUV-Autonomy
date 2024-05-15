@@ -17,8 +17,8 @@ class DesiredPublisher(Node) :
 
     def publish_output(self) :
             msg = Float64MultiArray()
-            msg.data = [[1,1,1,1,1,1]]
-            self.publisher_publish(msg)
+            msg.data = [1,1,1,1,1,1]
+            self.publisher_.publish(msg)
             self.get_logger().info('Publishing output: %s' % msg.data)
 
 def main(args = None):
