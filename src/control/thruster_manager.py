@@ -34,12 +34,11 @@ class ThrusterManager(Node):
         # testing_wrench = np.array([0, 0, 0, 0, 0.01, 0])
         # testing_wrench = np.array([0, 0, 0, 0, 0, 0.01])
         thrusts = total_force_to_individual_thrusts(testing_wrench)
-        print(thrusts)
         pwms = thrusts_to_pwm(thrusts)
-        # for i, thrust in enumerate(thrusts.tolist()):
-        #     msg = Float64()
-        #     msg.data = thrust
-        #     self._thrust_pubs[i].publish(msg)
+        for i, thrust in enumerate(thrusts.tolist()):
+            msg = Float64()
+            msg.data = thrust
+            self._thrust_pubs[i].publish(msg)
         for i, pwm in enumerate(pwms.tolist()):
             msg = Int16()
             msg.data = pwm

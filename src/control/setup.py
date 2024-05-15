@@ -17,9 +17,11 @@ setup(
     license="TODO: License declaration",
     entry_points={
         "console_scripts": [
+            f"checkpoint_manager = {package_name}.checkpoint_manager:main",
             f"thruster_manager = {package_name}.thruster_manager:main",
             f"pwm_subscriber = {package_name}.pwm_subscriber:main",
             f"gazebo_manager = {package_name}.gazebo_manager:main",
+            f"state_estimator = {package_name}.state_estimator:main",
         ],
     },
 )
