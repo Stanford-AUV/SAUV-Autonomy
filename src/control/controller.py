@@ -50,6 +50,8 @@ class Controller(Node) :
         :param start_i_values: Diagonal matrix of values to start integral for the 
             controller [startX, startY, startZ, startRoll, startPitch, startYaw].
         """
+        super().__init__('controller')
+
         self.kP_ = p_values
         self.kI_ = i_values
         self.kD_ = d_values
@@ -61,9 +63,10 @@ class Controller(Node) :
         self.integral = np.zeros(self.dim_)
         self.derivative = np.zeros(self.dim_)
         self.desired = np.zeros(self.dim_)
+        self.prev_error = np.zeros(self.dim_)
+        self.pose = np.zeros(self.dim_)
 
         # Initialize current state subscriber
-        super().__init__('state_subscriber')
         self.state_subscription_ = self.create_subscription(
             Float64MultiArray, 
             'state', 
@@ -72,7 +75,6 @@ class Controller(Node) :
         )
 
         # Initialize desired state subscriber
-        super().__init__('desired_subscriber')
         self.desired_subscription_ = self.create_subscription(
             Float64MultiArray, 
             'desired_pos', 
@@ -81,7 +83,6 @@ class Controller(Node) :
         )
 
         # Initialize force/torque output publisher
-        super().__init__('output_publisher')
         self.output_publisher_ = self.create_publisher(
             Float64MultiArray, 
             'desired_wrench', 
@@ -110,13 +111,14 @@ class Controller(Node) :
     def desired_callback(self, msg) :
         """Get the desired pose from a topic."""
         with self.lock :
-            self.desired = np.array(get_pose_from_state_state(msg.data))
+            self.desired = np.array(get_pose_from_state(msg.data))
             self.get_logger().info('Received desired pose: %s' % self.desired)
 
     def update(self) :
         """Update the controller with the current state and publish to a topic"""
         error = self.desired - self.pose
-        self.derivative = error = self.prev_error
+        self.get_logger().info('Received error: %s' % error)
+        self.derivative = error - self.prev_error
 
         # Pose is represented as a vector, so we loop through all elements to 
         # incorporate integral term
@@ -126,13 +128,13 @@ class Controller(Node) :
                 self.integral[i] += error[i]
 
         # Output is a linear combination of error, derivative, and integral vectors
-        output = self.kP_ @ error + self.kI @ self.integral + self.kD_ @ self.derivative
+        output = self.kP_ @ error + self.kI_ @ self.integral + self.kD_ @ self.derivative
 
         # Publish a list of control outputs:
         # [force_x, force_y, force_z, torque_roll, torque_pitch, torque_yaw]
         msg = Float64MultiArray(data = output)
         self.output_publisher_.publish(msg)
-        self.get_logger().info('Publishing output %s' % msg.data)
+        self.get_logger().info('Publishing output: %s' % msg.data)
 
         # Current error becomes previous error in the next time step
         self.prev_error = error
