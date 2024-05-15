@@ -2,28 +2,23 @@ import rclpy
 from rclpy.node import Node
 from rclpy.duration import Duration
 from rclpy.qos import QoSProfile
-import transforms3d
 import numpy as np
 from typing import Any
 from queue import PriorityQueue
 from dataclasses import dataclass, field
 
 from scipy.spatial.transform import Rotation
-from tauv_util.types import tl
-from tauv_msgs.msg import (
-    Pose as PoseMsg,
-    XsensImuData as ImuMsg,
-    TeledyneDvlData as DvlMsg,
-    FluidDepth as DepthMsg,
+from control.utils import toNp as tl
+from msgs.msg import (
+    State as PoseMsg,
+    # TeledyneDvlData as DvlMsg,
+    # FluidDepth as DepthMsg,
 )
+from sensor_msgs.msg import Imu as ImuMsg
+from ros_gz_interfaces.msg import Altimeter as DepthMsg
 from std_msgs.msg import Header
-from geometry_msgs.msg import (
-    Pose,
-    Twist,
-    Quaternion,
-)
-from nav_msgs.msg import Odometry as OdometryMsg
 from tf2_ros import TransformBroadcaster
+from rclpy.time import Time
 
 from .ekf import EKF
 
@@ -43,52 +38,48 @@ class StateEstimation(Node):
         qos_profile = QoSProfile(depth=10)
 
         self._pose_pub = self.create_publisher(PoseMsg, "pose", qos_profile)
-        self._odom_pub = self.create_publisher(OdometryMsg, "odom", qos_profile)
 
         self._imu_sub = self.create_subscription(
-            ImuMsg, "/xsens_imu/data", self._receive_msg, qos_profile
+            ImuMsg, "imu", self._receive_msg, qos_profile
         )
-        self._dvl_sub = self.create_subscription(
-            DvlMsg, "/teledyne_dvl/data", self._receive_msg, qos_profile
-        )
+        # self._dvl_sub = self.create_subscription(
+        #     DvlMsg, "/teledyne_dvl/data", self._receive_msg, qos_profile
+        # )
         self._depth_sub = self.create_subscription(
             DepthMsg, "depth", self._receive_msg, qos_profile
         )
 
-        self._dt = Duration(
-            seconds=1.0
-            / self.get_parameter("~frequency").get_parameter_value().double_value
-        )
-        self._horizon_delay = Duration(
-            seconds=self.get_parameter("~horizon_delay")
-            .get_parameter_value()
-            .double_value
-        )
+        self._dt = Duration(seconds=1.0)  # TODO: Don't hardcode this
+        self._horizon_delay = Duration(seconds=0.4)  # TODO: Don't hardcode this
 
-        dvl_offset = np.array(
-            self.get_parameter("~dvl_offset").get_parameter_value().double_array_value
-        )
+        dvl_offset = np.array([-0.16256, 0, 0.110236])  # TODO: Don't hardcode this
         process_covariance = np.array(
-            self.get_parameter("~process_covariance")
-            .get_parameter_value()
-            .double_array_value
-        )
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0e-4,
+                1.0e-4,
+                1.0e-4,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+            ]
+        )  # TODO: Don't hardcode this
 
         self._imu_covariance = np.array(
-            self.get_parameter("~imu_covariance")
-            .get_parameter_value()
-            .double_array_value
-        )
+            [1.0e-6, 1.0e-6, 1.0e-6, 1.0e-4, 1.0e-4, 1.0e-4]
+        )  # TODO: Don't hardcode this
         self._dvl_covariance = np.array(
-            self.get_parameter("~dvl_covariance")
-            .get_parameter_value()
-            .double_array_value
-        )
-        self._depth_covariance = np.array(
-            self.get_parameter("~depth_covariance")
-            .get_parameter_value()
-            .double_array_value
-        )
+            [1.0e-9, 1.0e-9, 1.0e-9]
+        )  # TODO: Don't hardcode this
+        self._depth_covariance = np.array([1.0e-9])  # TODO: Don't hardcode this
 
         self._ekf = EKF(dvl_offset, process_covariance)
         self._msg_queue = PriorityQueue()
@@ -102,6 +93,16 @@ class StateEstimation(Node):
 
         self._initialized = True
         self._timer = self.create_timer(self._dt.nanoseconds / 1e9, self._update)
+
+    def _receive_msg(self, msg: ImuMsg):
+        if not self._initialized:
+            return
+
+        if msg.header.stamp._sec < self._last_horizon_time.seconds_nanoseconds()[0]:
+            return
+
+        stamped_msg = StampedMsg(msg.header.stamp._sec, msg)
+        self._msg_queue.put(stamped_msg)
 
     def _update(self):
         if not self._initialized:
@@ -118,8 +119,8 @@ class StateEstimation(Node):
                 msg = stamped_msg.msg
                 if isinstance(msg, ImuMsg):
                     self._handle_imu(msg)
-                elif isinstance(msg, DvlMsg):
-                    self._handle_dvl(msg)
+                # elif isinstance(msg, DvlMsg):
+                #     self._handle_dvl(msg)
                 elif isinstance(msg, DepthMsg):
                     self._handle_depth(msg)
             else:
@@ -133,10 +134,14 @@ class StateEstimation(Node):
         if not self._initialized:
             return
 
-        timestamp = self.get_clock().now()
+        timestamp = Time(
+            seconds=msg.header.stamp.sec,
+            nanoseconds=msg.header.stamp.nanosec,
+            clock_type=self.get_clock().clock_type,
+        )
 
-        orientation = tl(msg.orientation)
-        free_acceleration = tl(msg.free_acceleration)
+        orientation = Rotation.from_quat(tl(msg.orientation)).as_euler("XYZ")
+        free_acceleration = tl(msg.linear_acceleration)
 
         R = Rotation.from_euler("ZYX", np.flip(orientation)).inv()
         linear_acceleration = R.apply(free_acceleration)
@@ -147,11 +152,15 @@ class StateEstimation(Node):
             orientation, linear_acceleration, covariance, timestamp
         )
 
-    def _handle_dvl(self, msg: DvlMsg):
+    def _handle_dvl(self, msg):
         if not self._initialized:
             return
 
-        timestamp = self.get_clock().now()
+        timestamp = Time(
+            seconds=msg.header.stamp.sec,
+            nanoseconds=msg.header.stamp.nanosec,
+            clock_type=self.get_clock().clock_type,
+        )
 
         if not msg.is_hr_velocity_valid:
             return
@@ -169,9 +178,13 @@ class StateEstimation(Node):
         if not self._initialized:
             return
 
-        timestamp = self.get_clock().now()
+        timestamp = Time(
+            seconds=msg.header.stamp.sec,
+            nanoseconds=msg.header.stamp.nanosec,
+            clock_type=self.get_clock().clock_type,
+        )
 
-        depth = np.array([msg.depth])
+        depth = np.array([msg.vertical_reference - msg.vertical_position])
         covariance = self._depth_covariance
 
         self._ekf.handle_depth_measurement(depth, covariance, timestamp)
@@ -189,43 +202,17 @@ class StateEstimation(Node):
         pose_msg.header = Header()
         pose_msg.header.stamp = time.to_msg()
         pose_msg.position = position
-        pose_msg.velocity = velocity
-        pose_msg.acceleration = acceleration
+        pose_msg.linear_velocity = velocity
+        pose_msg.linear_acceleration = acceleration
         pose_msg.orientation = orientation
-        pose_msg.angular_velocity = angular_velocity
+        pose_msg.euler_velocity = angular_velocity
+        # TODO: pose_msg.euler_acceleration
 
         # Publish pose message
         self._pose_pub.publish(pose_msg)
 
-        orientation_quat = transforms3d.euler.euler2quat(*orientation)
-
-        # Create and set up the OdometryMsg
-        odom_msg = OdometryMsg()
-        odom_msg.header = Header()
-        odom_msg.header.stamp = time.to_msg()
-        odom_msg.header.frame_id = "odom"
-        odom_msg.child_frame_id = "vehicle"
-        odom_msg.pose.pose = Pose(
-            position=position,
-            orientation=Quaternion(
-                x=orientation_quat[0],
-                y=orientation_quat[1],
-                z=orientation_quat[2],
-                w=orientation_quat[3],
-            ),
-        )
-        odom_msg.twist.twist = Twist(linear=velocity, angular=angular_velocity)
-
-        # Publish odometry message
-        self._odom_pub.publish(odom_msg)
-
-        # Send transform
-        self._tf_broadcaster.sendTransform(
-            translation=(position.x, position.y, position.z),
-            rotation=orientation_quat,
-            time=time.to_msg(),
-            child_frame_id="vehicle",
-            parent_frame_id="odom",
+        self.get_logger().info(
+            f"Estimated position: {pose_msg.position.x} {pose_msg.position.y} {pose_msg.position.z}"
         )
 
     def _send_odom_transform(self):
