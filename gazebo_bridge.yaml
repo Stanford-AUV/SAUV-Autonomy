@@ -1,3 +1,9 @@
+- ros_topic_name: "/clock"
+  gz_topic_name: "/world/buoyant_auv/clock"
+  ros_type_name: "rosgraph_msgs/msg/Clock"
+  gz_type_name: "gz.msgs.Clock"
+  direction: BIDIRECTIONAL
+
 - ros_topic_name: "gz/thruster_1"
   gz_topic_name: "/model/auv/joint/thruster_1/cmd_thrust"
   ros_type_name: "std_msgs/msg/Float64"
