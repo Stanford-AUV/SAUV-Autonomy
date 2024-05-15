@@ -48,19 +48,21 @@ class EKF:
         state = self._extrapolate_state(delta_t)
 
         position = Vector3(
-            state[StateIndex.X], state[StateIndex.Y], state[StateIndex.Z]
+            x=state[StateIndex.X], y=state[StateIndex.Y], z=state[StateIndex.Z]
         )
         velocity = Vector3(
-            state[StateIndex.VX], state[StateIndex.VY], state[StateIndex.VZ]
+            x=state[StateIndex.VX], y=state[StateIndex.VY], z=state[StateIndex.VZ]
         )
         acceleration = Vector3(
-            state[StateIndex.AX], state[StateIndex.AY], state[StateIndex.AZ]
+            x=state[StateIndex.AX], y=state[StateIndex.AY], z=state[StateIndex.AZ]
         )
         orientation = Vector3(
-            state[StateIndex.ROLL], state[StateIndex.PITCH], state[StateIndex.YAW]
+            x=state[StateIndex.ROLL], y=state[StateIndex.PITCH], z=state[StateIndex.YAW]
         )
         angular_velocity = Vector3(
-            state[StateIndex.VROLL], state[StateIndex.VPITCH], state[StateIndex.VYAW]
+            x=state[StateIndex.VROLL],
+            y=state[StateIndex.VPITCH],
+            z=state[StateIndex.VYAW],
         )
         return position, velocity, acceleration, orientation, angular_velocity
 

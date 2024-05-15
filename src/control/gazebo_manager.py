@@ -3,6 +3,9 @@ from rclpy.node import Node
 
 from std_msgs.msg import Float64
 
+from sensor_msgs.msg import Imu
+from ros_gz_interfaces.msg import Altimeter
+
 
 class GazeboManager(Node):
 
@@ -16,13 +19,21 @@ class GazeboManager(Node):
             self.create_subscription(
                 Float64,
                 f"thrusters/{thruster}/magnitude",
-                self.listener_callback(thruster),
+                self.thruster_callback(thruster),
                 10,
             )
             gazebo_thrust_pub = self.create_publisher(Float64, f"gz/{thruster}", 10)
             self._gazebo_thrust_pubs[thruster] = gazebo_thrust_pub
 
-    def listener_callback(self, thruster):
+        self._imu_sub = self.create_subscription(Imu, "gz/imu", self.imu_callback, 10)
+        self._imu_pub = self.create_publisher(Imu, "imu", 10)
+
+        self._altimeter_sub = self.create_subscription(
+            Altimeter, "gz/depth", self.altimeter_callback, 10
+        )
+        self._altimeter_pub = self.create_publisher(Altimeter, "depth", 10)
+
+    def thruster_callback(self, thruster):
         def callback(msg):
             thrust = msg.data
             msg = Float64()
@@ -33,6 +44,14 @@ class GazeboManager(Node):
             )
 
         return callback
+
+    def imu_callback(self, msg):
+        msg.header.stamp = self.get_clock().now().to_msg()
+        self._imu_pub.publish(msg)
+
+    def altimeter_callback(self, msg):
+        msg.header.stamp = self.get_clock().now().to_msg()
+        self._altimeter_pub.publish(msg)
 
 
 def main(args=None):
