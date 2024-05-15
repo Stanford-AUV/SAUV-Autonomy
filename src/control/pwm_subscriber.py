@@ -12,7 +12,7 @@ class PWMSubscriber(Node):
         self._thruster_ids = [f"thruster{i}" for i in range(1, 9)]
         self._subscribers = []
 
-        self.portName = serial.Serial("/dev/cu.usbmodem1101") # TODO REPLACE
+        self.portName = serial.Serial("/dev/ttyACM0") # TODO REPLACE
         for i, thruster in enumerate(self._thruster_ids):
             subscriber = self.create_subscription(
                 Int16, 
