@@ -22,13 +22,14 @@ def get_pose_from_state(state) :
         state.orientation.z
     ])
 
-def clamp(value, limits)
+def clamp(value, limits) :
     """
     Clamp a value to bounds
 
     :param value: The value to be clamped.
     :param limits: List containing the bounds
     """
+    return # TODO: finish in the future
 
 
 class Controller(Node) :
