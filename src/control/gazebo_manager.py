@@ -45,12 +45,14 @@ class GazeboManager(Node):
 
         return callback
 
-    def imu_callback(self, msg):
-        msg.header.stamp = self.get_clock().now().to_msg()
+    def imu_callback(self, msg: Imu):
+        self.get_logger().info("Received IMU message")
+        # Since underwater, remove g from the acceleration
+        msg.linear_acceleration.z -= 9.8
         self._imu_pub.publish(msg)
 
-    def altimeter_callback(self, msg):
-        msg.header.stamp = self.get_clock().now().to_msg()
+    def altimeter_callback(self, msg: Altimeter):
+        self.get_logger().info("Received altimeter message")
         self._altimeter_pub.publish(msg)
 
 
