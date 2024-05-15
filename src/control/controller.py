@@ -6,11 +6,14 @@ from std_srvs.srv import Empty
 import numpy as np
 import threading
 
+
+
 def get_pose_from_state(state) :
     """
     Prune state.msg to just the position and quaternion.
 
-    :param state: Float64MultiArray representing position, quaternion, velocity, & acceleration.
+    :param state: Float64MultiArray representing position, quaternion, velocity, 
+                  & acceleration.
     :return pose: x, y, z, roll, pitch, yaw.
     """
     return np.array([
@@ -35,12 +38,17 @@ def clamp(value, limits) :
 class Controller(Node) :
     def __init__(self, p_values, i_values, d_values, start_i_values) :
         """
-        Initialize Controller object with PID parameters for position and orientation.
+        Initialize Controller object with PID parameters for position and 
+        orientation.
 
-        :param p_values: Diagonal matrix of P gains for the controller [pX, pY, pZ, pRoll, pPitch, pYaw].
-        :param i_values: Diagonal matrix of I gains for the controller [iX, iY, iZ, iRoll, iPitch, iYaw].
-        :param d_values: Diagonal matrix of D gains for the controller [dX, dY, dZ, dRoll, dPitch, dYaw].
-        :param start_i_values: Diagonal matrix of values to start integral for the controller [startX, startY, startZ, startRoll, startPitch, startYaw].
+        :param p_values: Diagonal matrix of P gains for the controller 
+            [pX, pY, pZ, pRoll, pPitch, pYaw].
+        :param i_values: Diagonal matrix of I gains for the controller 
+            [iX, iY, iZ, iRoll, iPitch, iYaw].
+        :param d_values: Diagonal matrix of D gains for the controller 
+            [dX, dY, dZ, dRoll, dPitch, dYaw].
+        :param start_i_values: Diagonal matrix of values to start integral for the 
+            controller [startX, startY, startZ, startRoll, startPitch, startYaw].
         """
         self.kP_ = p_values
         self.kI_ = i_values
@@ -54,16 +62,40 @@ class Controller(Node) :
         self.derivative = np.zeros(self.dim_)
         self.desired = np.zeros(self.dim_)
 
+        # Initialize current state subscriber
         super().__init__('state_subscriber')
-        self.state_subscription_ = self.create_subscription(Float64MultiArray, 'state', self.pose_callback, 10)
+        self.state_subscription_ = self.create_subscription(
+            Float64MultiArray, 
+            'state', 
+            self.pose_callback, 
+            10
+        )
+
+        # Initialize desired state subscriber
         super().__init__('desired_subscriber')
-        self.desired_subscription_ = self.create_subscription(Float64MultiArray, 'desired_pos', self.desired_callback, 10)
+        self.desired_subscription_ = self.create_subscription(
+            Float64MultiArray, 
+            'desired_pos', 
+            self.desired_callback, 
+            10
+        )
+
+        # Initialize force/torque output publisher
         super().__init__('output_publisher')
-        self.output_publisher_ = self.create_publisher(Float64MultiArray, '')
-        set.timer_period_ = .01   # seconds (100 Hz or 10 ms update cycle)
+        self.output_publisher_ = self.create_publisher(
+            Float64MultiArray, 
+            'desired_wrench', 
+            10
+        )
+        self.timer_period_ = .01   # seconds (100 Hz or 10 ms update cycle)
+        self.timer = self.create_timer(self.timer_period_, self.update)
 
         # Services
-        self.reset_service = self.create_service(Empty, 'reset_controller', self.reset)
+        self.reset_service = self.create_service(
+            Empty, 
+            'reset_controller', 
+            self.reset
+        )
 
         # Create mutex to prevent race conditions
         self.running = False
@@ -86,14 +118,15 @@ class Controller(Node) :
         error = self.desired - self.pose
         self.derivative = error = self.prev_error
 
-        # Pose is represented as a vector, so we loop through all elements to incorporate integral term
+        # Pose is represented as a vector, so we loop through all elements to 
+        # incorporate integral term
         for i in range(self.dim_) :
             # Delay integral term to avoid integral wind-up
             if error[i] <= self.start_I_[i][i] :
                 self.integral[i] += error[i]
 
         # Output is a linear combination of error, derivative, and integral vectors
-        output = (self.kP_ @ error) + (self.kI @ self.integral) + (self.kD_ @ self.derivative)
+        output = self.kP_ @ error + self.kI @ self.integral + self.kD_ @ self.derivative
 
         # Publish a list of control outputs:
         # [force_x, force_y, force_z, torque_roll, torque_pitch, torque_yaw]
