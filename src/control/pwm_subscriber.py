@@ -2,7 +2,6 @@ import serial
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Int16
-from functools import partial
 
 class PWMSubscriber(Node):
 
@@ -12,23 +11,27 @@ class PWMSubscriber(Node):
         self._thruster_ids = [f"thruster{i}" for i in range(1, 9)]
         self._subscribers = []
 
-        self.portName = serial.Serial("/dev/ttyACM0") # TODO REPLACE
+        self.portName = serial.Serial("/dev/ttyACM0")
         for i, thruster in enumerate(self._thruster_ids):
             subscriber = self.create_subscription(
                 Int16, 
                 f"thrusters/{thruster}/pwm",
-                partial(self.pwm_callback, thruster_number=i+1),
+                lambda msg, tn=i+1: self.listener_callback(tn, msg),
                 10
             )
             self._subscribers.append(subscriber)
-            self.get_logger().info(f"Subscribed to {thruster} PWM")
+            self.get_logger().info(f"Subscribed to thrusters/{thruster}/pwm")
 
-    def pwm_callback(self, thruster_number, msg):
-        self.get_logger().info(f'Received PWM: {msg.data} for thruster {thruster_number}')
+    def listener_callback(self, thruster_number, msg):
+        # self.get_logger().info(f"Received PWM: {msg.data} for thruster {thruster_number}")
 
-        pwm_value = msg
+        pwm_value = msg.data
         command = f"{thruster_number} {pwm_value}"
-        self.portName.write(command.encode())
+        try:
+            self.portName.write(command.encode())
+            self.get_logger().info(f'Sent to thruster {thruster_number}: {pwm_value} pwm')
+        except serial.SerialException as e:
+            self.get_logger().error(f'Failed to write to serial port: {e}')
 
 def main(args=None):
     rclpy.init(args=args)
