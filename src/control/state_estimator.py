@@ -31,7 +31,8 @@ class StampedMsg:
 
 class StateEstimation(Node):
     def __init__(self):
-        super().__init__("state_estimation")
+        super().__init__("state_estimator")
+
         self._initialized = False
 
         self._tf_broadcaster = TransformBroadcaster(self)
@@ -73,13 +74,9 @@ class StateEstimation(Node):
             ]
         )  # TODO: Don't hardcode this
 
-        self._imu_covariance = np.array(
-            [1.0e-6, 1.0e-6, 1.0e-6, 1.0e-4, 1.0e-4, 1.0e-4]
-        )  # TODO: Don't hardcode this
-        self._dvl_covariance = np.array(
-            [1.0e-9, 1.0e-9, 1.0e-9]
-        )  # TODO: Don't hardcode this
-        self._depth_covariance = np.array([1.0e-9])  # TODO: Don't hardcode this
+        self._imu_covariance = np.array([0, 0, 0, 0, 0, 0])  # TODO: Don't hardcode this
+        self._dvl_covariance = np.array([0, 0, 0])  # TODO: Don't hardcode this
+        self._depth_covariance = np.array([0])  # TODO: Don't hardcode this
 
         self._ekf = EKF(dvl_offset, process_covariance)
         self._msg_queue = PriorityQueue()
@@ -121,8 +118,8 @@ class StateEstimation(Node):
                     self._handle_imu(msg)
                 # elif isinstance(msg, DvlMsg):
                 #     self._handle_dvl(msg)
-                elif isinstance(msg, DepthMsg):
-                    self._handle_depth(msg)
+                # elif isinstance(msg, DepthMsg):
+                #     self._handle_depth(msg)
             else:
                 self._msg_queue.put(stamped_msg)
                 break
