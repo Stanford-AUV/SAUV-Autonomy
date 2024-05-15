@@ -4,7 +4,7 @@ import numpy as np
 
 import json
 
-from msgs.msg import Pose
+from msgs.msg import Pose, State
 from geometry_msgs.msg import Vector3
 from std_msgs.msg import Header
 
@@ -18,8 +18,8 @@ class CheckpointManager(Node):
             self._checkpoints = json.load(f)
         self._desired_pose = np.array(self._checkpoints[0])
 
-        self._current_pose_sub = self.create_subscription(
-            Pose, "pose", self.current_pose_callback, 10
+        self._current_state_sub = self.create_subscription(
+            State, "state", self.current_state_callback, 10
         )
         self._desired_pose_pub = self.create_publisher(Pose, "desired_pose", 10)
 
@@ -44,8 +44,17 @@ class CheckpointManager(Node):
         self._desired_pose_pub.publish(msg)
         self.get_logger().info(f"Published desired pose {msg}")
 
-    def current_pose_callback(self, msg):
-        current_pose = np.array([msg.x, msg.y, msg.z, msg.roll, msg.pitch, msg.yaw])
+    def current_state_callback(self, msg: State):
+        current_pose = np.array(
+            [
+                msg.position.x,
+                msg.position.y,
+                msg.position.z,
+                msg.orientation.x,
+                msg.orientation.y,
+                msg.orientation.z,
+            ]
+        )
         if np.linalg.norm(current_pose - self._desired_pose) < 0.1:
             self._checkpoints.pop(0)
             if len(self._checkpoints) == 0:
