@@ -1,6 +1,5 @@
 import rclpy
 from rclpy.node import Node
-from rclpy_interfaces.msg import SetParametersResult
 from std_msgs.msg import Float64MultiArray
 from std_srvs.srv import Empty
 import numpy as np
