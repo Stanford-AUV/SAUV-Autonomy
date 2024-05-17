@@ -11,7 +11,7 @@ class ThrusterManager(Node):
     def __init__(self):
         super().__init__("thruster_manager")
 
-        self._thruster_ids = [f"thruster{i}" for i in range(1, 9)]
+        self._thruster_ids = [f"thruster_{i}" for i in range(1, 9)]
 
         self._pwm_pubs = []
         self._thrust_pubs = []
@@ -43,7 +43,6 @@ class ThrusterManager(Node):
             msg = Int16()
             msg.data = pwm
             self._pwm_pubs[i].publish(msg)
-            self.get_logger().info(f'Publishing thruster {i} pwm: {msg.data}')
 
 
 def main(args=None):
