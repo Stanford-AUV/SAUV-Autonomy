@@ -22,6 +22,7 @@ setup(
             f"pwm_subscriber = {package_name}.pwm_subscriber:main",
             f"gazebo_manager = {package_name}.gazebo_manager:main",
             f"state_estimator = {package_name}.state_estimator:main",
+            f"controller = {package_name}.controller:main",
         ],
     },
 )

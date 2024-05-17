@@ -15,8 +15,9 @@ class CheckpointManager(Node):
         super().__init__("checkpoint_manager")
 
         with open("data/checkpoints.json") as f:
-            self._checkpoints = json.load(f)
-        self._desired_pose = np.array(self._checkpoints[0])
+            self._checkpoints = np.array(json.load(f))
+        self._checkpoints_index = 0
+        self._desired_pose = self._checkpoints[self._checkpoints_index]
 
         self._current_state_sub = self.create_subscription(
             State, "state", self.current_state_callback, 10
@@ -56,12 +57,9 @@ class CheckpointManager(Node):
             ]
         )
         if np.linalg.norm(current_pose - self._desired_pose) < 0.1:
-            self._checkpoints.pop(0)
-            if len(self._checkpoints) == 0:
-                self.destroy_node()
-                rclpy.shutdown()
-                return
-            self._desired_pose = np.array(self._checkpoints[0])
+            self._desired_pose = self._checkpoints[self._checkpoints_index]
+            if self._checkpoints_index < len(self._checkpoints) - 1:
+                self._checkpoints_index += 1
 
 
 def main(args=None):
