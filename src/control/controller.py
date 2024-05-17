@@ -6,11 +6,14 @@ import threading
 from msgs.msg import Pose, State, Wrench
 from geometry_msgs.msg import Vector3
 
-from control.utils import pose_to_np
+from control.utils import pose_to_np, velocity_to_np
+import matplotlib.pyplot as plt
 
 
 class Controller(Node):
-    def __init__(self, p_values, i_values, d_values, start_i_values):
+    def __init__(
+        self, p_values, i_values, d_values, k_velocity_damping, start_i_values
+    ):
         """
         Initialize Controller object with PID parameters for position and
         orientation.
@@ -29,7 +32,11 @@ class Controller(Node):
         self.kP_ = p_values
         self.kI_ = i_values
         self.kD_ = d_values
+        self.k_velocity_damping_ = k_velocity_damping
         self.start_I_ = start_i_values
+        self.velocity = np.zeros(6)
+
+        self.index = 0
 
         self.dim_ = 6  # 6 DOF
 
@@ -66,6 +73,7 @@ class Controller(Node):
         """Get our current pose from a topic."""
         with self.lock:
             self.pose = np.array(pose_to_np(msg))
+            self.velocity = np.array(velocity_to_np(msg))
             self.get_logger().info("Received pose: %s" % self.pose)
 
     def desired_callback(self, msg: Pose):
@@ -84,16 +92,24 @@ class Controller(Node):
         # incorporate integral term
         for i in range(self.dim_):
             # Delay integral term to avoid integral wind-up
-            if error[i] <= self.start_I_[i][i]:
+            if abs(error[i]) <= self.start_I_[i][i]:
                 self.integral[i] += error[i]
 
         # Wrench is a linear combination of error, derivative, and integral vectors
-        uncapped_wrench = (
+        undamped_wrench = (
             self.kP_ @ error + self.kI_ @ self.integral + self.kD_ @ self.derivative
         )
+        damping = -self.k_velocity_damping_ * self.velocity
+
+        uncapped_wrench = undamped_wrench + damping
 
         # Cap the wrench to prevent thrust from exceeding limits
         wrench = np.clip(uncapped_wrench, -1, 1)
+
+        # if self.index % 10 == 0:
+        #     plt.scatter(self.index, uncapped_wrench[2])
+        #     plt.pause(0.05)
+        # self.index += 1
 
         # Publish a list of control outputs:
         # [force_x, force_y, force_z, torque_roll, torque_pitch, torque_yaw]
@@ -118,9 +134,9 @@ class Controller(Node):
         """
         self.get_logger().info("Resetting controler settings.")
         with self.lock:
-            self.integral = 0
-            self.derivative = 0
-            self.prev_error = 0
+            self.integral = np.zeros(self.dim_)
+            self.derivative = np.zeros(self.dim_)
+            self.prev_error = np.zeros(self.dim_)
             return response
 
 
@@ -129,12 +145,14 @@ def main(args=None):
 
     # Initialize controller gains
     #                      x, y, z, r, p, y
-    kP = np.diag(np.array([0.1, 0.1, 0.1, 0.1, 0.1, 0.1]))
-    kD = np.diag(np.array([0, 0, 0, 0, 0, 0]))
+    # 0 0 1 0 0 0
+    kP = 0.05 * np.diag(np.array([1.3, 0, 0, 0, 0, 0]))
+    kD = 0 * np.diag(np.array([1, 0, 0, 0, 0, 0]))
     kI = np.diag(np.array([0, 0, 0, 0, 0, 0]))
+    k_velocity_damping = 3 * np.array([1, 0, 0, 0, 0, 0])
     start_I = np.diag(np.array([0, 0, 0, 0, 0, 0]))
 
-    controller_node = Controller(kP, kD, kI, start_I)
+    controller_node = Controller(kP, kD, kI, k_velocity_damping, start_I)
 
     try:
         rclpy.spin(controller_node)

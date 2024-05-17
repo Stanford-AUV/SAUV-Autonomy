@@ -30,7 +30,7 @@ class ThrusterManager(Node):
             Wrench, "desired_wrench", self.wrench_callback, 10
         )
 
-        timer_period = 0.5  # TODO: Don't hardcode this
+        timer_period = 0.01  # seconds (100 Hz or 10 ms update cycle)
         self.timer = self.create_timer(timer_period, self.timer_callback)
 
     def timer_callback(self):

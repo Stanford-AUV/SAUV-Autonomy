@@ -50,7 +50,6 @@ class StateEstimation(Node):
             DepthMsg, "depth", self._receive_msg, qos_profile
         )
 
-        self._dt = Duration(seconds=1.0)  # TODO: Don't hardcode this
         self._horizon_delay = Duration(seconds=0.4)  # TODO: Don't hardcode this
 
         dvl_offset = np.array([-0.16256, 0, 0.110236])  # TODO: Don't hardcode this
@@ -89,7 +88,8 @@ class StateEstimation(Node):
         )
 
         self._initialized = True
-        self._timer = self.create_timer(self._dt.nanoseconds / 1e9, self._update)
+        timer_period = 0.01  # seconds (100 Hz or 10 ms update cycle)
+        self.timer = self.create_timer(timer_period, self._update)
 
     def _receive_msg(self, msg: ImuMsg):
         if not self._initialized:

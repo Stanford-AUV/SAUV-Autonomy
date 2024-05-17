@@ -30,6 +30,20 @@ def pose_to_np(o: Pose | State):
         )
 
 
+def velocity_to_np(o: State):
+    if isinstance(o, Pose) or isinstance(o, State) or isinstance(o, Wrench):
+        return np.array(
+            [
+                o.linear_velocity.x,
+                o.linear_velocity.y,
+                o.linear_velocity.z,
+                o.euler_velocity.x,
+                o.euler_velocity.y,
+                o.euler_velocity.z,
+            ]
+        )
+
+
 def wrench_to_np(o: Wrench):
     if isinstance(o, Wrench):
         return np.array(

@@ -27,12 +27,12 @@ def generate_launch_description():
             Node(
                 package=package,
                 executable="controller",
-                ros_arguments=ros_arguments,
+                # ros_arguments=ros_arguments,
             ),
             Node(
                 package=package,
                 executable="thruster_manager",
-                # ros_arguments=ros_arguments,
+                ros_arguments=ros_arguments,
             ),
         ]
     )
