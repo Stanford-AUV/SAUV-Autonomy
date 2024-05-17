@@ -59,9 +59,9 @@ class StateEstimation(Node):
                 0.0,
                 0.0,
                 0.0,
-                1.0e-4,
-                1.0e-4,
-                1.0e-4,
+                0.0,
+                0.0,
+                0.0,
                 0.0,
                 0.0,
                 0.0,
@@ -138,10 +138,7 @@ class StateEstimation(Node):
         )
 
         orientation = Rotation.from_quat(tl(msg.orientation)).as_euler("XYZ")
-        free_acceleration = tl(msg.linear_acceleration)
-
-        R = Rotation.from_euler("ZYX", np.flip(orientation)).inv()
-        linear_acceleration = R.apply(free_acceleration)
+        linear_acceleration = tl(msg.linear_acceleration)
 
         covariance = self._imu_covariance
 
@@ -209,7 +206,7 @@ class StateEstimation(Node):
         self._pose_pub.publish(pose_msg)
 
         self.get_logger().info(
-            f"Estimated position: {pose_msg.position.x} {pose_msg.position.y} {pose_msg.position.z}"
+            f"Estimated position: {pose_msg.position.x:.2f} {pose_msg.position.y:.2f} {pose_msg.position.z:.2f}"
         )
 
     def _send_odom_transform(self):
