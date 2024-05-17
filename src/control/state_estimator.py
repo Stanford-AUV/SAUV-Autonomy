@@ -118,8 +118,8 @@ class StateEstimation(Node):
                     self._handle_imu(msg)
                 # elif isinstance(msg, DvlMsg):
                 #     self._handle_dvl(msg)
-                # elif isinstance(msg, DepthMsg):
-                #     self._handle_depth(msg)
+                elif isinstance(msg, DepthMsg):
+                    self._handle_depth(msg)
             else:
                 self._msg_queue.put(stamped_msg)
                 break
@@ -178,7 +178,7 @@ class StateEstimation(Node):
             clock_type=self.get_clock().clock_type,
         )
 
-        depth = np.array([msg.vertical_reference - msg.vertical_position])
+        depth = np.array([msg.vertical_reference + msg.vertical_position])
         covariance = self._depth_covariance
 
         self._ekf.handle_depth_measurement(depth, covariance, timestamp)
