@@ -11,12 +11,18 @@ class PWMSubscriber(Node):
         self._thruster_ids = [f"thruster{i}" for i in range(1, 9)]
         self._subscribers = []
 
-        self.portName = serial.Serial("/dev/ttyACM0")
+        try:
+            self.portName = serial.Serial("/dev/ttyACM0", baudrate=9600, timeout=1)
+            self.get_logger().info(f"Serial port /dev/ttyACM0 opened successfully.")
+        except serial.SerialException as e:
+            self.get_logger().error(f"Failed to open serial port: {e}")
+            return
+
         for i, thruster in enumerate(self._thruster_ids):
             subscriber = self.create_subscription(
                 Int16, 
                 f"thrusters/{thruster}/pwm",
-                lambda msg, tn=i+1: self.listener_callback(tn, msg),
+                lambda msg, tn=i+2: self.listener_callback(tn, msg),
                 10
             )
             self._subscribers.append(subscriber)
@@ -26,7 +32,7 @@ class PWMSubscriber(Node):
         # self.get_logger().info(f"Received PWM: {msg.data} for thruster {thruster_number}")
 
         pwm_value = msg.data
-        command = f"{thruster_number} {pwm_value}"
+        command = f'{thruster_number} {pwm_value}\n'
         try:
             self.portName.write(command.encode())
             self.get_logger().info(f'Sent to thruster {thruster_number}: {pwm_value} pwm')
