@@ -48,7 +48,7 @@ u_is = np.array(
         [1, 1, 0],
         [-1, 1, 0],
         [1, 1, 0],
-        [-1, 1, 0]
+        [-1, 1, 0],
     ]
 )
 u_is = u_is / np.linalg.norm(u_is, axis=1)[:, None]
