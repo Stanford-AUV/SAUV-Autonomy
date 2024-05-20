@@ -14,7 +14,7 @@ class Arduino(Node):
         self.portName = serial.Serial("/dev/ttyACM0")
         for i, thruster in enumerate(self._thruster_ids):
             subscriber = self.create_subscription(
-                Int16, 
+                Int16,
                 f"thrusters/{thruster}/pwm",
                 lambda msg, tn=i+2: self.listener_callback(tn, msg),
                 10
