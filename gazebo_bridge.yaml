@@ -63,3 +63,9 @@
   ros_type_name: "ros_gz_interfaces/msg/Altimeter"
   gz_type_name: "gz.msgs.Altimeter"
   direction: GZ_TO_ROS
+
+- ros_topic_name: "gz/pose"
+  gz_topic_name: "/model/auv/pose"
+  ros_type_name: "geometry_msgs/msg/PoseStamped"
+  gz_type_name: "gz.msgs.Pose"
+  direction: GZ_TO_ROS
