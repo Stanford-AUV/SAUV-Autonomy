@@ -1,5 +1,6 @@
 import rclpy
 from rclpy.node import Node
+from rclpy.time import Time
 from std_srvs.srv import Empty
 import numpy as np
 import threading
@@ -40,6 +41,8 @@ class Controller(Node):
         self.prev_error = np.zeros(self.dim_)
         self.pose = np.zeros(self.dim_)
 
+        self.last_time = self.get_clock().now()
+
         # Initialize current state subscriber
         self.state_subscription_ = self.create_subscription(
             State, "state", self.state_callback, 10
@@ -52,8 +55,6 @@ class Controller(Node):
 
         # Initialize force/torque output publisher
         self.output_publisher_ = self.create_publisher(Wrench, "desired_wrench", 10)
-        self.timer_period_ = 0.01  # seconds (100 Hz or 10 ms update cycle)
-        self.timer = self.create_timer(self.timer_period_, self.update)
 
         # Services
         self.reset_service = self.create_service(Empty, "reset_controller", self.reset)
@@ -66,26 +67,36 @@ class Controller(Node):
         """Get our current pose from a topic."""
         with self.lock:
             self.pose = np.array(pose_to_np(msg))
-            self.get_logger().info("Received pose: %s" % self.pose)
+            # self.get_logger().info("Received pose: %s" % self.pose)
+            timestamp = Time(
+                seconds=msg.header.stamp.sec,
+                nanoseconds=msg.header.stamp.nanosec,
+                clock_type=self.get_clock().clock_type,
+            )
+            self.dt = (timestamp - self.last_time).nanoseconds
+            self.last_time = timestamp
+            self.update()
 
     def desired_callback(self, msg: Pose):
         """Get the desired pose from a topic."""
         with self.lock:
             self.desired = np.array(pose_to_np(msg))
-            self.get_logger().info("Received desired pose: %s" % self.desired)
+            # self.get_logger().info("Received desired pose: %s" % self.desired)
 
     def update(self):
         """Update the controller with the current state and publish to a topic"""
         error = self.desired - self.pose
         self.get_logger().info("Received error: %s" % error)
-        self.derivative = error - self.prev_error
+        self.derivative = (error - self.prev_error) / self.dt
+
+        self._logger.info(f"Received derivative: {self.derivative}")
 
         # Pose is represented as a vector, so we loop through all elements to
         # incorporate integral term
         for i in range(self.dim_):
             # Delay integral term to avoid integral wind-up
             if error[i] <= self.start_I_[i][i]:
-                self.integral[i] += error[i]
+                self.integral[i] += error[i] * self.dt
 
         # Wrench is a linear combination of error, derivative, and integral vectors
         uncapped_wrench = (
@@ -124,13 +135,24 @@ class Controller(Node):
             return response
 
 
+# 0.01 -> 20.02
+# 0.05 -> 20.04
+# 0.1 -> 20.08
+# 1 -> 20.11
+
+# 0.1, 0.1 -> 15.09
+# 0.1, 1 -> 15.07
+# 0.1, 1000 -> 15.05
+# 0.1, 1000000 ->
+
+
 def main(args=None):
     rclpy.init(args=args)
 
     # Initialize controller gains
     #                      x, y, z, r, p, y
-    kP = np.diag(np.array([0.1, 0.1, 0.1, 0.1, 0.1, 0.1]))
-    kD = np.diag(np.array([0, 0, 0, 0, 0, 0]))
+    kP = np.diag(np.array([0.1, 0, 0, 0, 0, 0]))
+    kD = np.diag(np.array([1000000, 0, 0, 0, 0, 0]))
     kI = np.diag(np.array([0, 0, 0, 0, 0, 0]))
     start_I = np.diag(np.array([0, 0, 0, 0, 0, 0]))
 
