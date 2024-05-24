@@ -76,6 +76,10 @@ For example:
 ```bash
 ros2 run control thruster_manager
 ```
+To run a set of nodes:
+```bash
+ros2 launch src/control/launch/sim.py
+```
 
 # Testing
 
