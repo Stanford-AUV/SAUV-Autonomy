@@ -8,9 +8,9 @@ from queue import PriorityQueue
 from dataclasses import dataclass, field
 
 from scipy.spatial.transform import Rotation
-from control.utils import toNp as tl
+from control.utils import to_np as tl
 from msgs.msg import (
-    State as PoseMsg,
+    State as StateMsg,
     # TeledyneDvlData as DvlMsg,
     # FluidDepth as DepthMsg,
 )
@@ -38,7 +38,7 @@ class StateEstimation(Node):
         self._tf_broadcaster = TransformBroadcaster(self)
         qos_profile = QoSProfile(depth=10)
 
-        self._pose_pub = self.create_publisher(PoseMsg, "pose", qos_profile)
+        self._state_pub = self.create_publisher(StateMsg, "state", qos_profile)
 
         self._imu_sub = self.create_subscription(
             ImuMsg, "imu", self._receive_msg, qos_profile
@@ -59,9 +59,9 @@ class StateEstimation(Node):
                 0.0,
                 0.0,
                 0.0,
-                1.0e-4,
-                1.0e-4,
-                1.0e-4,
+                0.0,
+                0.0,
+                0.0,
                 0.0,
                 0.0,
                 0.0,
@@ -118,8 +118,8 @@ class StateEstimation(Node):
                     self._handle_imu(msg)
                 # elif isinstance(msg, DvlMsg):
                 #     self._handle_dvl(msg)
-                # elif isinstance(msg, DepthMsg):
-                #     self._handle_depth(msg)
+                elif isinstance(msg, DepthMsg):
+                    self._handle_depth(msg)
             else:
                 self._msg_queue.put(stamped_msg)
                 break
@@ -138,10 +138,7 @@ class StateEstimation(Node):
         )
 
         orientation = Rotation.from_quat(tl(msg.orientation)).as_euler("XYZ")
-        free_acceleration = tl(msg.linear_acceleration)
-
-        R = Rotation.from_euler("ZYX", np.flip(orientation)).inv()
-        linear_acceleration = R.apply(free_acceleration)
+        linear_acceleration = tl(msg.linear_acceleration)
 
         covariance = self._imu_covariance
 
@@ -181,7 +178,7 @@ class StateEstimation(Node):
             clock_type=self.get_clock().clock_type,
         )
 
-        depth = np.array([msg.vertical_reference - msg.vertical_position])
+        depth = np.array([msg.vertical_reference + msg.vertical_position])
         covariance = self._depth_covariance
 
         self._ekf.handle_depth_measurement(depth, covariance, timestamp)
@@ -194,22 +191,22 @@ class StateEstimation(Node):
         except ValueError as e:
             return
 
-        # Create PoseMsg and set header
-        pose_msg = PoseMsg()
-        pose_msg.header = Header()
-        pose_msg.header.stamp = time.to_msg()
-        pose_msg.position = position
-        pose_msg.linear_velocity = velocity
-        pose_msg.linear_acceleration = acceleration
-        pose_msg.orientation = orientation
-        pose_msg.euler_velocity = angular_velocity
-        # TODO: pose_msg.euler_acceleration
+        # Create StateMsg and set header
+        state_msg = StateMsg()
+        state_msg.header = Header()
+        state_msg.header.stamp = time.to_msg()
+        state_msg.position = position
+        state_msg.linear_velocity = velocity
+        state_msg.linear_acceleration = acceleration
+        state_msg.orientation = orientation
+        state_msg.euler_velocity = angular_velocity
+        # TODO: state_msg.euler_acceleration
 
-        # Publish pose message
-        self._pose_pub.publish(pose_msg)
+        # Publish state message
+        self._state_pub.publish(state_msg)
 
         self.get_logger().info(
-            f"Estimated position: {pose_msg.position.x} {pose_msg.position.y} {pose_msg.position.z}"
+            f"Estimated position: {state_msg.position.x:.2f} {state_msg.position.y:.2f} {state_msg.position.z:.2f}"
         )
 
     def _send_odom_transform(self):

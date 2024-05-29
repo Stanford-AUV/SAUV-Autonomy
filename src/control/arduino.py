@@ -3,10 +3,10 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Int16
 
-class PWMSubscriber(Node):
+class Arduino(Node):
 
     def __init__(self):
-        super().__init__("pwm_subscriber")
+        super().__init__("arduino")
 
         self._thruster_ids = [f"thruster{i}" for i in range(1, 9)]
         self._subscribers = []
@@ -20,7 +20,7 @@ class PWMSubscriber(Node):
 
         for i, thruster in enumerate(self._thruster_ids):
             subscriber = self.create_subscription(
-                Int16, 
+                Int16,
                 f"thrusters/{thruster}/pwm",
                 lambda msg, tn=i+2: self.listener_callback(tn, msg),
                 10
@@ -41,9 +41,9 @@ class PWMSubscriber(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    pwm_subscriber = PWMSubscriber()
-    rclpy.spin(pwm_subscriber)
-    pwm_subscriber.destroy_node()
+    arduino = Arduino()
+    rclpy.spin(arduino)
+    arduino.destroy_node()
     rclpy.shutdown()
 
 if __name__ == "__main__":
