@@ -71,3 +71,14 @@ For example:
 ```bash
 python3 -m unittest control.tests.TestEKF.test_initial_state
 ```
+
+# Remote Control
+
+Install this through Homebrew on your Mac:
+```bash
+brew install libusb
+```
+
+Run the joystick code with the joystick plugged-in through USB:
+```bash
+python src/control/remote.py --record
