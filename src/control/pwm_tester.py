@@ -11,15 +11,17 @@ def main():
     pwms = thrusts_to_pwm(thrusts)
     print(f'pwms: {pwms}')
 
-    n = 3
+    n = 20
+    # for i in range(8):
+     #   time.sleep(10)
+     #   print(f"{80 - i * 10} seconds left!")
     for j in range(n):
-        if j == n-1:
-            time.sleep(5)
+        time.sleep(5)
         for i, thruster in enumerate(thruster_ids):
             if j == n - 1:
                 command = f"{i+2} 1500\n"
             else:
-                command = f"{i+2} {forward[i]}\n"
+                command = f"{i+2} {pwms[i]}\n"
             print(f"command: {command}")
             portName.write(command.encode())
             ##time.sleep(.1)
