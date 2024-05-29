@@ -2,9 +2,14 @@ import rclpy
 from rclpy.node import Node
 
 from std_msgs.msg import Float64
+from scipy.spatial.transform import Rotation
 
 from sensor_msgs.msg import Imu
 from ros_gz_interfaces.msg import Altimeter
+from geometry_msgs.msg import PoseStamped, Vector3
+from msgs.msg import State
+
+from control.utils import to_np
 
 
 class GazeboManager(Node):
@@ -33,6 +38,11 @@ class GazeboManager(Node):
         )
         self._altimeter_pub = self.create_publisher(Altimeter, "depth", 10)
 
+        self._pose_sub = self.create_subscription(
+            PoseStamped, "gz/pose", self.pose_callback, 10
+        )
+        self._state_pub = self.create_publisher(State, "state", 10)
+
     def thruster_callback(self, thruster):
         def callback(msg):
             thrust = msg.data
@@ -54,6 +64,20 @@ class GazeboManager(Node):
     def altimeter_callback(self, msg: Altimeter):
         self.get_logger().info("Received altimeter message")
         self._altimeter_pub.publish(msg)
+
+    def pose_callback(self, msg: PoseStamped):
+        self.get_logger().info("Received pose message")
+        state = State()
+        state.header = msg.header
+        state.position = Vector3(
+            x=msg.pose.position.x, y=msg.pose.position.y, z=msg.pose.position.z
+        )
+        orientation = Rotation.from_quat(to_np(msg.pose.orientation)).as_euler("xyz")
+        state.orientation = Vector3(
+            x=orientation[0], y=orientation[1], z=orientation[2]
+        )
+        self.get_logger().info(f"Publishing state: {state}")
+        self._state_pub.publish(state)
 
 
 def main(args=None):

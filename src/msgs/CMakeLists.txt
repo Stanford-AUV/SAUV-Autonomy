@@ -32,6 +32,7 @@ find_package(vision_msgs REQUIRED)
 set(msg_files
   "msg/Pose.msg"
   "msg/State.msg"
+  "msg/Wrench.msg"
 )
 
 rosidl_generate_interfaces(${PROJECT_NAME}

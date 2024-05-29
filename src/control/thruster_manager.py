@@ -3,7 +3,9 @@ from rclpy.node import Node
 import numpy as np
 
 from std_msgs.msg import Int16, Float64
+from msgs.msg import Wrench
 from control.force_to_pwm import total_force_to_individual_thrusts, thrusts_to_pwm
+from control.utils import wrench_to_np
 
 
 class ThrusterManager(Node):
@@ -11,7 +13,9 @@ class ThrusterManager(Node):
     def __init__(self):
         super().__init__("thruster_manager")
 
-        self._thruster_ids = [f"thruster{i}" for i in range(1, 9)]
+        self._thruster_ids = [f"thruster_{i}" for i in range(1, 9)]
+
+        self.wrench = np.zeros(6)
 
         self._pwm_pubs = []
         self._thrust_pubs = []
@@ -22,18 +26,15 @@ class ThrusterManager(Node):
             )
             self._pwm_pubs.append(pwm_pub)
             self._thrust_pubs.append(thrust_pub)
+        self._wrench_sub = self.create_subscription(
+            Wrench, "desired_wrench", self.wrench_callback, 10
+        )
 
-        timer_period = 0.5  # TODO: Don't hardcode this
+        timer_period = 0.01  # TODO: Don't hardcode this
         self.timer = self.create_timer(timer_period, self.timer_callback)
 
     def timer_callback(self):
-        testing_wrench = np.array([1, 0, 0, 0, 0, 0])
-        # testing_wrench = np.array([0, 1, 0, 0, 0, 0])
-        # testing_wrench = np.array([0, 0, 1, 0, 0, 0])
-        # testing_wrench = np.array([0, 0, 0, 0.01, 0, 0])
-        # testing_wrench = np.array([0, 0, 0, 0, 0.01, 0])
-        # testing_wrench = np.array([0, 0, 0, 0, 0, 0.01])
-        thrusts = total_force_to_individual_thrusts(testing_wrench)
+        thrusts = total_force_to_individual_thrusts(self.wrench)
         pwms = thrusts_to_pwm(thrusts)
         for i, thrust in enumerate(thrusts.tolist()):
             msg = Float64()
@@ -43,7 +44,10 @@ class ThrusterManager(Node):
             msg = Int16()
             msg.data = pwm
             self._pwm_pubs[i].publish(msg)
-            self.get_logger().info(f'Publishing thruster {i} pwm: {msg.data}')
+
+    def wrench_callback(self, msg: Wrench):
+        self.wrench = wrench_to_np(msg)
+        self.get_logger().info(f"Received wrench {self.wrench}")
 
 
 def main(args=None):

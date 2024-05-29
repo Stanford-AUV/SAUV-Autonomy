@@ -4,12 +4,12 @@ from rclpy.node import Node
 from sensor_msgs.msg import Imu
 
 
-class ImuSubscriber(Node):
+class IMU(Node):
 
     def __init__(self):
-        super().__init__('imu_subscriber')
+        super().__init__('imu')
         self.subscription = self.create_subscription(
-            Imu,
+            MTi200Data, # TODO make sure data type makes sense
             '/imu/data',
             self.listener_callback,
             10)
@@ -23,14 +23,10 @@ class ImuSubscriber(Node):
 def main(args=None):
     rclpy.init(args=args)
 
-    imu_subscriber = ImuSubscriber()
-    print("poop")
-    rclpy.spin(imu_subscriber)
+    imu = IMU()
+    rclpy.spin(imu)
 
-    # Destroy the node explicitly
-    # (optional - otherwise it will be done automatically
-    # when the garbage collector destroys the node object)
-    imu_subscriber.destroy_node()
+    imu.destroy_node()
     rclpy.shutdown()
 
 
