@@ -98,10 +98,24 @@ python3 -m unittest control.tests.TestEKF.test_initial_state
 
 # Remote Control
 
-Install this through Homebrew on your Mac:
+Make sure you have permissions to read from the joystick by first typing:
 ```bash
-brew install libusb
+lsusb
 ```
+Then read the ID for the Gamepad, something like `046d:c21d`. The first number is the VID and the second number is the PID.
+```bash
+sudo nano /etc/udev/rules.d/80-joystick.rules
+```
+Then enter:
+```
+SUBSYSTEM=="usb", ATTRS{idVendor}=="VID", ATTRS{idProduct}=="PID", MODE="0666"
+```
+Replacing the VID and PID with the values found above.
+After saving the above file, reload the rules by typing:
+```bash
+sudo udevadm control --reload-rules
+```
+Then unplug and replug the Joystick. Make sure to select `Connect to Linux` on the VM.
 
 Run the joystick code with the joystick plugged-in through USB:
 ```bash
