@@ -4,6 +4,8 @@ Autonomy stack
 
 # Installation
 
+Update from initial instructions: Make sure to select in your VM more storage than 20 GB! You'll likely need at least 30 GB.
+
 1. Install VMWare Fusion (the free version, not the pro version).
 2. Download the Ubuntu ISO from https://cdimage.ubuntu.com/jammy/daily-live/current/jammy-desktop-arm64.iso.
 3. Open VMWare and drag the downloaded Debian ISO for installation.
@@ -16,7 +18,7 @@ Autonomy stack
 10. When prompted for Ubuntu, press enter, and then login.
 11. Run the following: `sudo apt-get update && sudo apt-get install open-vm-tools-desktop`
 12. Shutdown the Virtual Machine, then restart it, and copy-pasting shortcuts should work.
-13. Run the following in a Terminal: `sudo apt-get install openssh-server && sudo apt install net-tools && service ssh start`
+13. Run the following in a Terminal: `sudo apt-get install openssh-server && sudo apt install net-tools && sudo apt install git-all && service ssh start`
 14. Note the USER@HOST shown in the VM's Ubuntu Terminal. Then open a Terminal on your local computer (i.e. your Mac) and enter `ssh USER@HOST.local`.
 15. If you connect successfully, now type `logout`, and then type `ssh-keygen -t ed25519` leaving all fields as default. Finally type `ssh-copy-id -i ~/.ssh/id_ed25519.pub USER@HOST.local`, once more replacing USER and HOST with your own credentials.
 16. Install VSCode from https://code.visualstudio.com.
@@ -30,6 +32,28 @@ Autonomy stack
 # Development
 
 Make sure to use VSCode. Install all the extensions mentioned in the `.vscode/extensions.json` file.
+In every new Terminal, run:
+```bash
+source /opt/ros/humble/setup.bash
+export PYTHONPATH=${PYTHONPATH}:$PWD/src
+```
+
+## Gazebo Simulator
+
+To use the Gazebo simulator, follow these steps:
+1. Open a Terminal in the VM (not in VSCode! a GUI is necessary for this).
+2. Run the commands from the [Development](#development) section.
+3. Run the following command:
+```bash
+bash gazebo.sh
+```
+
+All topics exposed from Gazebo to ROS are located in `gazebo_bridge.yaml`.
+
+To test manually, avoid using Gazebo commands directly. Always prefer going through the bridge. For example, to manually set thrust:
+```bash
+ros2 topic pub gz/thruster_1 std_msgs/Float64 "data: -15"
+```
 
 # Building
 
@@ -39,7 +63,7 @@ rosdep install -i --from-path src --rosdistro humble -y
 ```
 To build the code, please run the following:
 ```bash
-colcon build --symlink-install && source install/setup.bash
+colcon build && source install/setup.bash
 ```
 
 # Running
