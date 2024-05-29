@@ -16,6 +16,14 @@ setup(
     description="TODO: Package description",
     license="TODO: License declaration",
     entry_points={
-        "console_scripts": [f"thruster_manager = {package_name}.thruster_manager:main"],
+        "console_scripts": [
+            f"checkpoint_manager = {package_name}.checkpoint_manager:main",
+            f"thruster_manager = {package_name}.thruster_manager:main",
+            f"pwm_subscriber = {package_name}.arduino:main",
+            f"gazebo_manager = {package_name}.gazebo_manager:main",
+            f"state_estimator = {package_name}.state_estimator:main",
+            f"controller = {package_name}.controller:main",
+            f"imu = {package_name}.imu:main"
+        ],
     },
 )
