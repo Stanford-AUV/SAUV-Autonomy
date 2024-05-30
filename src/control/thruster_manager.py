@@ -6,6 +6,7 @@ from std_msgs.msg import Int16, Float64
 import geometry_msgs.msg as geometry_msgs
 from control.force_to_pwm import total_force_to_individual_thrusts, thrusts_to_pwm
 from control.utils import wrench_to_np
+from msgs.msg import Wrench
 
 
 class ThrusterManager(Node):
@@ -15,14 +16,6 @@ class ThrusterManager(Node):
 
         self._thruster_ids = [f"thruster_{i}" for i in range(1, 9)]
         self.wrench = np.zeros(6)
-        
-        # Subscribe to 'desired_wrench'
-        self.sub_desired_wrench = self.create_subscription(
-                geometry_msgs.WrenchStamped,
-                'topic,',
-                self.wrench_callback,
-                10)
-        self.subscription # Prevent unused variable warning
 
         # Publish to 'thrusters/{thruster}/pwm'
         self._pwm_pubs = []
