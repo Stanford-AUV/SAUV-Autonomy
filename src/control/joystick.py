@@ -69,7 +69,7 @@ def loop():
 class Joystick(Node):
     def __init__(self):
         super().__init__("joystick")
-        self.publisher_ = self.create_publisher(Wrench, "wrench", 10)
+        self.publisher_ = self.create_publisher(Wrench, "desired_wrench", 10)
         self.pad = Gamepad()
         self.record = "--record" in sys.argv
         self.file = open("wrench.txt", "w") if self.record else None
