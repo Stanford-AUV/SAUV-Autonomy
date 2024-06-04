@@ -7,8 +7,8 @@
 import usb1
 import struct
 
-USB_VENDOR = 0x046D
-USB_PRODUCT = 0xC21D
+USB_VENDOR = 1133
+USB_PRODUCT = 49686
 default_state = (0, 20, 0, 0, 0, 0, 123, 251, 128, 0, 128, 0, 128, 0, 0, 0, 0, 0, 0, 0)
 
 
@@ -25,6 +25,7 @@ class Gamepad(object):
         handle = None
 
         for device in self.context.getDeviceList():
+            print(f"VENDOR: {device.getVendorID()}, PRODUCT: {device.getProductID()}")
             if (
                 device.getVendorID() == USB_VENDOR
                 and device.getProductID() == USB_PRODUCT
