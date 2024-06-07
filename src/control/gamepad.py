@@ -25,7 +25,7 @@ class Gamepad(object):
         handle = None
 
         for device in self.context.getDeviceList():
-            print(f"VENDOR: {device.getVendorID()}, PRODUCT: {device.getProductID()}")
+            # print(f"VENDOR: {device.getVendorID()}, PRODUCT: {device.getProductID()}")
             if (
                 device.getVendorID() == USB_VENDOR
                 and device.getProductID() == USB_PRODUCT
