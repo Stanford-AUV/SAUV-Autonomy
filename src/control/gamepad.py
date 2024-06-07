@@ -7,8 +7,8 @@
 import usb1
 import struct
 
-USB_VENDOR = 1133
-USB_PRODUCT = 49686
+USB_VENDOR = 0x046D
+USB_PRODUCT = 0xC21D
 default_state = (0, 20, 0, 0, 0, 0, 123, 251, 128, 0, 128, 0, 128, 0, 0, 0, 0, 0, 0, 0)
 
 
