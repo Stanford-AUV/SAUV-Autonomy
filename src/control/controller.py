@@ -9,9 +9,9 @@ import threading
 
 def get_pose_from_state(state) :
     """
-    Prune state.msg to just the position and quaternion.
+    Prune state.msg to just the position and orientation.
 
-    :param state: Float64MultiArray representing position, quaternion, velocity, 
+    :param state: Float64MultiArray representing position, orientation, velocity, 
                   & acceleration.
     :return pose: x, y, z, roll, pitch, yaw.
     """
