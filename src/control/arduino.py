@@ -8,7 +8,7 @@ class Arduino(Node):
     def __init__(self):
         super().__init__("arduino")
 
-        self._thruster_ids = [f"thruster{i}" for i in range(1, 9)]
+        self._thruster_ids = [f"thruster_{i}" for i in range(1, 9)]
         self._subscribers = []
 
         try:
@@ -33,6 +33,7 @@ class Arduino(Node):
 
         pwm_value = msg.data
         command = f'{thruster_number} {pwm_value}\n'
+        # command = f'8 1600\n9 1600'
         try:
             self.portName.write(command.encode())
             self.get_logger().info(f'Sent to thruster {thruster_number}: {pwm_value} pwm')
