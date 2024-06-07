@@ -23,7 +23,9 @@ setup(
             f"gazebo_manager = {package_name}.gazebo_manager:main",
             f"state_estimator = {package_name}.state_estimator:main",
             f"controller = {package_name}.controller:main",
-            f"imu = {package_name}.imu:main"
+            f"imu = {package_name}.imu:main",
+            f"joystick = {package_name}.joystick:main",
+            f"forward_publisher = {package_name}.forward_publisher:main"
         ],
     },
 )
