@@ -9,57 +9,59 @@ from geometry_msgs.msg import Vector3
 from simple_pid import PID
 from scipy.spatial.transform import Rotation
 
-from control.utils import pose_to_np
+from control.utils import pose_to_np, vel_to_np, same_sgn
 
 
 class Controller(Node):
-    def __init__(self, p_values, i_values, d_values, start_i_values):
-        """
-        Initialize Controller object with PID parameters for position and
-        orientation.
 
-        :param p_values: Diagonal matrix of P gains for the controller
-            [pX, pY, pZ, pRoll, pPitch, pYaw].
-        :param i_values: Diagonal matrix of I gains for the controller
-            [iX, iY, iZ, iRoll, iPitch, iYaw].
-        :param d_values: Diagonal matrix of D gains for the controller
-            [dX, dY, dZ, dRoll, dPitch, dYaw].
-        :param start_i_values: Diagonal matrix of values to start integral for the
-            controller [startX, startY, startZ, startRoll, startPitch, startYaw].
+    def __init__(self, 
+                 p_values: np.ndarray,
+                 i_values: np.ndarray,
+                 d_values: np.ndarray,
+                 start_i_values: np.ndarray,
+                 max_i_values: np.ndarray,
+                 dterm_i_values: np.ndarray
+                ):
         """
+        Initialize Controller with PID parameters for position and orientation [x, y, z, roll, pitch, yaw].
+
+        :param p_values: Diagonal matrix of P gains.
+        :param i_values: Diagonal matrix of I gains.
+        :param d_values: Diagonal matrix of D gains.
+        :param start_i_values: Diagonal matrix of errors to start integral term.
+        :param max_i_values: Diagonal matrix of maximum integral values.
+        :param dterm_i_values: Diagonal matrix of weights for the derivative term in the integral calculation
+        """
+
         super().__init__("controller")
 
-        self.start_I_ = start_i_values
+        # Initialize controller parameters
+        self._kP = p_values
+        self._kI = i_values
+        self._kD = d_values
+        self._start_i = start_i_values
+        self._max_i = max_i_values
+        self._alpha = dterm_i_values
 
-        self.pids = [
-            PID(
-                p,
-                i,
-                d,
-                setpoint=0,
-                sample_time=None,
-                time_fn=lambda: self.get_clock().now().nanoseconds / 1e9,
-            )
-            for p, i, d in zip(p_values, i_values, d_values)
-        ]
-
-        self.dim_ = 6  # 6 DOF
-
-        # Initialize mutables; everything is 0 at t_0
-        self.desired = np.zeros(self.dim_)
-        self.pose = np.zeros(self.dim_)
-
+        # Initialize time keeping variables
+        self.timer = lambda: self.get_clock().now().nanoseconds / 1e9 
         self.last_time = self.get_clock().now()
 
+        self._dim = 6   # 6 DOF     
+
+        # Initialize controller mutables; everything is 0 to start
+        self.current_pose = np.zeros(self._dim)
+        self.desired_pose = np.zeros(self._dim)
+        self.previous_pose = np.zeros(self._dim)
+        self.current_vel = np.zeros(self._dim)
+        self.desired_vel = np.zeros(self._dim)
+        self.integral = np.zeros(self._dim)
+
         # Initialize current state subscriber
-        self.state_subscription_ = self.create_subscription(
-            State, "state", self.state_callback, 10
-        )
+        self._state_subscription = self.create_subscription(State, "state", self.state_callback, 10)
 
         # Initialize desired state subscriber
-        self.desired_subscription_ = self.create_subscription(
-            Pose, "desired_pose", self.desired_callback, 10
-        )
+        self._desired_subscription = self.create_subscription(Pose, "desired_pose", self.desired_callback, 10)
 
         # Initialize force/torque output publisher
         self.output_publisher_ = self.create_publisher(Wrench, "desired_wrench", 10)
@@ -71,38 +73,55 @@ class Controller(Node):
         self.lock = threading.Lock()
 
     def state_callback(self, msg: State):
-        """Get our current pose from a topic."""
-        with self.lock:
+        """Get our current state from a topic and extract relevant information."""
+
+        with self.lock: 
+            # Get current pose and velocities
             self.pose = np.array(pose_to_np(msg))
+            self.vel = np.array(vel_to_np(msg))
             # self.get_logger().info("Received pose: %s" % self.pose)
+            # self.get_logger().info("Received vel: %s" % self.vel)
+
+            # Get time interval from last reading
             timestamp = Time(
-                seconds=msg.header.stamp.sec,
-                nanoseconds=msg.header.stamp.nanosec,
-                clock_type=self.get_clock().clock_type,
+                seconds = msg.header.stamp.sec, 
+                nanoseconds = msg.header.stamp.nanosec,
+                clock_type = self.get_clock().clock_type
             )
-            self.dt = (timestamp - self.last_time).nanoseconds
+            self.dt = (timestamp - self.last_time).nanoseconds   # time difference in nanoseconds
             self.last_time = timestamp
+
             self.update()
 
     def desired_callback(self, msg: Pose):
-        """Get the desired pose from a topic."""
+        """Get the desired pose and velocities from a topic."""
+
         with self.lock:
-            self.desired = np.array(pose_to_np(msg))
-            for i, pid in enumerate(self.pids):
-                pid.setpoint = self.desired[i]
+            # Get current pose and velocities
+            self.desired_pose = np.array(pose_to_np(msg))
+            self.desired_vel = np.array(vel_to_np(msg))
+            # self.get_logger().info("Received desired pose: %s" % self.desired)
             # self.get_logger().info("Received desired pose: %s" % self.desired)
 
     def update(self):
         """Update the controller with the current state and publish to a topic"""
-        # Wrench in global frame
-        global_wrench = np.array([pid(self.pose[i]) for i, pid in enumerate(self.pids)])
+
+        # Calculate wrench in global frame
+        pose_error = self.desired_pose - self.current_pose
+        vel_error = self.desired_vel - self.current_vel
+        overshoot = same_sgn(pose_error, self.previous_error)
+        for i in range(len(self.current_pose)) :
+            if pose_error[i] < self._start_i[i] and overshoot :
+                self.integral[i] += (pose_error + self.alpha * vel_error) * (self.dt / 1e9)
+            self.integral[i] = min(self.integral[i], self._max_i[i])
+        global_wrench = (self._kP @ )
 
         # Convert wrench to local frame
         current_orientation = self.pose[3:]
         rotation_matrix = Rotation.from_euler("xyz", -current_orientation).as_matrix()
         local_wrench = np.concatenate(
             [rotation_matrix @ global_wrench[:3], rotation_matrix @ -global_wrench[3:]]
-        )
+        )   
 
         np.set_printoptions(precision=2, suppress=True)
         self.get_logger().info(f"Local wrench: {local_wrench}")
@@ -123,15 +142,17 @@ class Controller(Node):
         self.output_publisher_.publish(msg)
         # self.get_logger().info(f"Publishing wrench: {wrench}")
 
-    def reset(self):
-        """
-        Reset the controller settings.
-        """
+    def reset(self): 
+        """Reset the controller settings."""
+
         self.get_logger().info("Resetting controler settings.")
         with self.lock:
-            for pid, start_i in zip(self.pids, self.start_I_):
-                pid.reset()
-                pid.set_auto_mode(True, last_output=start_i)
+            self.current_pose = np.zeros(self._dim)
+            self.desired_pose = np.zeros(self._dim)
+            self.previous_pose = np.zeros(self._dim)
+            self.current_vel = np.zeros(self._dim)
+            self.desired_vel = np.zeros(self._dim)
+            self.integral = np.zeros(self._dim)
 
 
 # 0.01 -> 20.02
@@ -148,8 +169,7 @@ class Controller(Node):
 def main(args=None):
     rclpy.init(args=args)
 
-    # Initialize controller gains
-    #                      x, y, z, r, p, y
+    # Initialize controller gains [x, y, z, r, p, y]
     kP = np.array([0.1, 0.1, 0.1, 0.05, 0.05, 0.05])
     kD = np.array([0, 0, 0, 0, 0, 0])
     kI = np.array([1.5, 1.5, 1.5, 0.75, 0.75, 0.75])

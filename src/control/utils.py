@@ -28,6 +28,19 @@ def pose_to_np(o: Pose | State):
                 o.orientation.z,
             ]
         )
+    
+
+def vel_to_np(o: State) :
+    return np.array(
+        [
+            o.linear_velocity.x,
+            o.linear_velocity.y,
+            o.linear_velocity.z,
+            o.euler_velocity.x,
+            o.euler_velocity.y,
+            o.euler_velocity.z,
+        ]
+    )
 
 
 def wrench_to_np(o: Wrench):
@@ -42,3 +55,11 @@ def wrench_to_np(o: Wrench):
                 o.torque.z,
             ]
         )
+
+def same_sgn(a: np.ndarray | float | int, b: np.ndarray | float | int) -> bool:
+    if isinstance(a, np.ndarray) and isinstance(b, np.ndarray):
+        return np.all(np.sign(a) == np.sign(b))
+    elif isinstance(a, (float, int)) and isinstance(b, (float, int)):
+        return np.sign(a) == np.sign(b)
+    else:
+        raise TypeError("Both arguments must be either numbers or numpy arrays.")
