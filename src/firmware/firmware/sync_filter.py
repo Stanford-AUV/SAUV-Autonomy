@@ -1,57 +1,118 @@
 import rclpy
 import ms5837
+import math
 
 from rclpy.node import Node
 from std_msgs.msg import Float64
 from msgs.msg import (
     SensorSync as SyncMsg
-    # TeledyneDvlData as DvlMsg,
-    # FluidDepth as DepthMsg,
+    MTi200Data as Imu
 )
+from geometry_msgs.msg import Twist
+from message_filters import Subscriber, ApproximateTimeSynchronizer
 
-# HOW TO IMPORT MESSAGES 
-
-sensor = ms5837.MS5837(model=ms5837.MS5837_MODEL_02BA, bus=7) # Bar02, I2C bus 7
+ACCEPTABLE_SLOP = 0.000125 # 1 / 400 Hz divided by 2, this may need to be changed based on IMU frequency
+LastImuSyncTS_sec = math.nan 
 
 class SyncFilter(Node):
 
     def __init__(self):
-        super().__init__('sync_pubsub')
-        self.sync_publisher_ = self.create_publisher(Float64, 'sensors/synchronized_data', 10)
-        timer_period = 0.5  # seconds
-        self.timer = self.create_timer(timer_period, self.timer_callback)
+        super().__init__('sync_filter')
 
+        self.sync_publisher_ = self.create_publisher(SyncMsg, 'sensors/synchronized_data', 10)
+        self.last_imu_sync_ts_sec = math.nan
 
-    def timer_callback(self):
-        pressure_msg = Float64()
-        depth_msg = Float64()
-        temp_msg = Float64()
+        self.dvl_sub = Subscriber(self, Twist, 'dvl/velocity')
+        self.imu_sub = Subscriber(self, Imu, 'imu_sensor/imu')
+        self.depth_sub = Subscriber(self, Float64, 'depth_sensor/depth_meter')
+
+        # synchronize DVL, IMU, Depth data
+        self.ts_caseA = ApproximateTimeSynchronizer( # case A: all messages available
+            [self.dvl_sub, self.imu_sub, self.depth_sub], 
+            queue_size=10, 
+            slop=ACCEPTABLE_SLOP
+        )
+        self.ts_caseA.registerCallback(self.sync_callback_A)
+
+        self.ts_caseB = ApproximateTimeSynchronizer( # case B: IMU DVL available
+            [self.dvl_sub, self.imu_sub], 
+            queue_size=10, 
+            slop=ACCEPTABLE_SLOP
+        )
+        self.ts_caseB.registerCallback(self.sync_callback_B)
+
+        self.ts_caseC = ApproximateTimeSynchronizer( # case C: IMU Depth available
+            [self.imu_sub, self.depth_sub], 
+            queue_size=10, 
+            slop=ACCEPTABLE_SLOP
+        )
+        self.ts_caseC.registerCallback(self.sync_callback_C)
+
+    def sync_callback_A(self, dvl_msg, imu_msg, depth_msg):
+        self.last_imu_sync_ts_sec = imu_msg.header.stamp.sec # update most recent IMU time for valid full sync
+
+        sync_msg = SyncMsg()
+        sync_msg.dvl_available = True
+        sync_msg.dvl_data = dvl_msg
+
+        sync_msg.imu_available = True
+        sync_msg.imu_data = imu_msg
+
+        sync_msg.depth_available = True
+        sync_msg.depth_data = depth_msg
         
-        if sensor.read():
-            pressure_msg.data = sensor.pressure(ms5837.UNITS_psi)
-            depth_msg.data = sensor.depth()
-            temp_msg.data = sensor.temperature()
-        
-            self.pressure_publisher_.publish(pressure_msg)
-            self.depth_publisher_.publish(depth_msg)
-            self.temp_publisher_.publish(temp_msg)
+        self.sync_publisher_.publish(sync_msg)
+        self.get_logger().info(f'Publishing fully synchronized data: {sync_msg}')
 
-            self.get_logger().info(f'Publishing Pressure: {pressure_msg.data:.2f} m, Depth: {depth_msg.data:.2f} m, Temperature: {temp_msg.data:.2f} degC')
-        else:
-            self.get_logger().info("Sensor read fail!")
+    def sync_callback_B(self, dvl_msg, imu_msg):
+        CurrTS = imu_msg.header.stamp.sec 
+        if CurrTS != self.last_imu_sync_ts_sec: # if time is the same as full sync, ignore since we've already pub'd
+            sync_msg = SyncMsg()
+            sync_msg.dvl_available = True
+            sync_msg.dvl_data = dvl_msg
+
+            sync_msg.imu_available = True
+            sync_msg.imu_data = imu_msg
+
+            sync_msg.depth_available = False
+            sync_msg.depth_data = math.nan
+            
+            self.sync_publisher_.publish(sync_msg)
+            self.get_logger().info(f'Publishing partially synchronized data: {sync_msg}')
+
+    def sync_callback_C(self, imu_msg, depth_msg):
+        CurrTS = imu_msg.header.stamp.sec
+        if CurrTS != self.last_imu_sync_ts_sec: # if time is the same as full sync, ignore since we've already pub'd
+            sync_msg = SyncMsg()
+            sync_msg.dvl_available = False
+
+            dvl_msg = Twist()
+            dvl_msg.linear.x = math.nan
+            dvl_msg.linear.y = math.nan
+            dvl_msg.linear.z = math.nan
+            dvl_msg.angular.x = math.nan
+            dvl_msg.angular.y = math.nan
+            dvl_msg.angular.z = math.nan
+            sync_msg.dvl_data = dvl_msg
+
+            sync_msg.imu_available = True
+            sync_msg.imu_data = imu_msg
+
+            sync_msg.depth_available = True
+            sync_msg.depth_data = depth_msg
+            
+            self.sync_publisher_.publish(sync_msg)
+            self.get_logger().info(f'Publishing partially synchronized data: {sync_msg}')
 
 
 def main(args=None):
     rclpy.init(args=args)
 
-    depth_publisher = DepthPublisher()
+    sync_filter = SyncFilter()
 
-    rclpy.spin(depth_publisher)
+    rclpy.spin(sync_filter)
 
-    # Destroy the node explicitly
-    # (optional - otherwise it will be done automatically
-    # when the garbage collector destroys the node object)
-    depth_publisher.destroy_node()
+    sync_filter.destroy_node()
     rclpy.shutdown()
 
 
