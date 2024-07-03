@@ -12,7 +12,6 @@ from geometry_msgs.msg import Twist
 from message_filters import Subscriber, ApproximateTimeSynchronizer
 
 ACCEPTABLE_SLOP = 0.000125 # 1 / 400 Hz divided by 2, this may need to be changed based on IMU frequency
-LastImuSyncTS_sec = math.nan 
 
 class SyncFilter(Node):
 
