@@ -13,11 +13,6 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Pose2D.msg"
   "msg/BoundingBox2D.msg"
   "msg/BoundingBox3D.msg"
-  "msg/Mask.msg"
-  "msg/KeyPoint2D.msg"
-  "msg/KeyPoint2DArray.msg"
-  "msg/KeyPoint3D.msg"
-  "msg/KeyPoint3DArray.msg"
   "msg/Detection.msg"
   "msg/DetectionArray.msg"
   DEPENDENCIES std_msgs geometry_msgs
