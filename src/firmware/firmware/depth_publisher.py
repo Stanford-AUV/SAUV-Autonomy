@@ -15,7 +15,7 @@ class DepthPublisher(Node):
         self.pressure_publisher_ = self.create_publisher(Float64, 'depth_sensor/pressure_psi', 10)
         self.depth_publisher_ = self.create_publisher(Float64, 'depth_sensor/depth_meter', 10)
         self.temp_publisher_ = self.create_publisher(Float64, 'depth_sensor/temp_celsius', 10)
-        timer_period = 0.5  # seconds
+        timer_period = 0.03  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
 
         if MODE == 1: # default is already freshwater
