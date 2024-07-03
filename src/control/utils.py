@@ -1,4 +1,5 @@
 import numpy as np
+from spatialmath.base import *
 from geometry_msgs.msg import Vector3, Quaternion, Point
 from msgs.msg import Pose, State, Wrench
 
@@ -63,3 +64,47 @@ def same_sgn(a: np.ndarray | float | int, b: np.ndarray | float | int) -> bool:
         return np.sign(a) == np.sign(b)
     else:
         raise TypeError("Both arguments must be either numbers or numpy arrays.")
+    
+def clamp(value: float | int, limits: float | int) -> float | int:
+    lower, upper = limits
+    if value is None:
+        return None
+    elif (upper is not None) and (value > upper):
+        return upper
+    elif (lower is not None) and (value < lower):
+        return lower
+    return value
+
+def axis_angle_from_quat(q):
+    """Convert a unit quaternion to axis-angle representation"""
+    s = q[0]
+    v = q[1:4]
+    normv = np.linalg.norm(v)
+    if normv < 1e-10:
+        return np.zeros(3)
+    else:
+        r = v / normv
+        theta = 2 * np.arctan2(normv, s)
+        return r * theta
+    
+def q_shorter(q):
+    """Returns the equivalent quaternion with rotation < 180 degrees"""
+    s = q[0]
+    v = q[1:4]
+    if s < 0:
+        return -q
+    else:
+        return q
+    
+def get_axis_angle_error(q_WB, q_W_des):
+    # desired attitude_q_current attitude
+    q_des_B = qqmul(qconj(q_W_des), q_WB)
+
+    # make sure this quat describes the <180 degree rotation
+    # because q and -q both describe the same attitude, but
+    # one is > 180, one is < 180
+    q_des_B = q_shorter(q_des_B)
+
+    des_phi_b = axis_angle_from_quat(q_des_B)
+
+    return des_phi_b
