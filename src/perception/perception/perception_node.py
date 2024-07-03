@@ -15,16 +15,11 @@ from torch import cuda
 from ultralytics import YOLO
 from ultralytics.engine.results import Results
 from ultralytics.engine.results import Boxes
-from ultralytics.engine.results import Masks
-from ultralytics.engine.results import Keypoints
 
 from std_srvs.srv import SetBool
 from sensor_msgs.msg import Image
 from yolov8_msgs.msg import Point2D
 from yolov8_msgs.msg import BoundingBox2D
-from yolov8_msgs.msg import Mask
-from yolov8_msgs.msg import KeyPoint2D
-from yolov8_msgs.msg import KeyPoint2DArray
 from yolov8_msgs.msg import Detection
 from yolov8_msgs.msg import DetectionArray
 
@@ -46,6 +41,7 @@ class Yolov8Node(LifecycleNode):
 
     def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
         self.get_logger().info(f"Configuring {self.get_name()}")
+
 
         self.model = self.get_parameter(
             "model").get_parameter_value().string_value
@@ -75,6 +71,8 @@ class Yolov8Node(LifecycleNode):
             SetBool, "enable", self.enable_cb
         )
         self.cv_bridge = CvBridge()
+
+        print("@@@@@@@@@@@2")
 
         return TransitionCallbackReturn.SUCCESS
 
@@ -163,58 +161,6 @@ class Yolov8Node(LifecycleNode):
 
         return boxes_list
 
-    def parse_masks(self, results: Results) -> List[Mask]:
-
-        masks_list = []
-
-        def create_point2d(x: float, y: float) -> Point2D:
-            p = Point2D()
-            p.x = x
-            p.y = y
-            return p
-
-        mask: Masks
-        for mask in results.masks:
-
-            msg = Mask()
-
-            msg.data = [create_point2d(float(ele[0]), float(ele[1]))
-                        for ele in mask.xy[0].tolist()]
-            msg.height = results.orig_img.shape[0]
-            msg.width = results.orig_img.shape[1]
-
-            masks_list.append(msg)
-
-        return masks_list
-
-    def parse_keypoints(self, results: Results) -> List[KeyPoint2DArray]:
-
-        keypoints_list = []
-
-        points: Keypoints
-        for points in results.keypoints:
-
-            msg_array = KeyPoint2DArray()
-
-            if points.conf is None:
-                continue
-
-            for kp_id, (p, conf) in enumerate(zip(points.xy[0], points.conf[0])):
-
-                if conf >= self.threshold:
-                    msg = KeyPoint2D()
-
-                    msg.id = kp_id + 1
-                    msg.point.x = float(p[0])
-                    msg.point.y = float(p[1])
-                    msg.score = float(conf)
-
-                    msg_array.data.append(msg)
-
-            keypoints_list.append(msg_array)
-
-        return keypoints_list
-
     def image_cb(self, msg: Image) -> None:
 
         if self.enable:
@@ -234,12 +180,6 @@ class Yolov8Node(LifecycleNode):
                 hypothesis = self.parse_hypothesis(results)
                 boxes = self.parse_boxes(results)
 
-            if results.masks:
-                masks = self.parse_masks(results)
-
-            if results.keypoints:
-                keypoints = self.parse_keypoints(results)
-
             # create detection msgs
             detections_msg = DetectionArray()
 
@@ -253,12 +193,6 @@ class Yolov8Node(LifecycleNode):
                     aux_msg.score = hypothesis[i]["score"]
 
                     aux_msg.bbox = boxes[i]
-
-                if results.masks:
-                    aux_msg.mask = masks[i]
-
-                if results.keypoints:
-                    aux_msg.keypoints = keypoints[i]
 
                 detections_msg.detections.append(aux_msg)
 
