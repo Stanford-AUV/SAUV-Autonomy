@@ -3,31 +3,24 @@ import ms5837
 
 from rclpy.node import Node
 from std_msgs.msg import Float64
+from msgs.msg import (
+    SensorSync as SyncMsg
+    # TeledyneDvlData as DvlMsg,
+    # FluidDepth as DepthMsg,
+)
 
-MODE = 0 # MODE 0 is freshwater, MODE 1 is saltwater
+# HOW TO IMPORT MESSAGES 
 
 sensor = ms5837.MS5837(model=ms5837.MS5837_MODEL_02BA, bus=7) # Bar02, I2C bus 7
 
-class DepthPublisher(Node):
+class SyncFilter(Node):
 
     def __init__(self):
-        super().__init__('depth_publisher')
-        self.pressure_publisher_ = self.create_publisher(Float64, 'depth_sensor/pressure_psi', 10)
-        self.depth_publisher_ = self.create_publisher(Float64, 'depth_sensor/depth_meter', 10)
-        self.temp_publisher_ = self.create_publisher(Float64, 'depth_sensor/temp_celsius', 10)
-        timer_period = 0.03  # seconds
+        super().__init__('sync_pubsub')
+        self.sync_publisher_ = self.create_publisher(Float64, 'sensors/synchronized_data', 10)
+        timer_period = 0.5  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
 
-        if MODE == 1: # default is already freshwater
-            sensor.setFluidDensity(ms5837.DENSITY_SALTWATER)
-        
-        # if not sensor.init(): TODO --> HANDLE THIS CASE!!!
-        #     print("Sensor could not be initialized")
-        #     exit(1)
-
-        # if not sensor.read():
-        #     print("Sensor read failed!")
-        #     exit(1)
 
     def timer_callback(self):
         pressure_msg = Float64()
