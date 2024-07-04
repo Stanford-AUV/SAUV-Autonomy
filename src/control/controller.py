@@ -121,9 +121,9 @@ class Controller(Node):
 
         # integral terms
         for i in range(len(self.integral)):
-            if (i < 3) and (pos_error[i] < self.start_i[i]):
+            if i < 3 and pos_error[i] < self.start_i[i]:
                 self.integral[i] += self.dt * (pos_error[i] + self.alpha[i] * d_v_W[i])
-            else:
+            elif des_phi_b[i] < self.start_i[i]:
                 self.integral[i] += self.dt * (des_phi_b[i-3] + self.alpha[i] * d_w_B[i-3])
             clamp(self.integral[i], [self.integral[i], self.max[i]])
         
