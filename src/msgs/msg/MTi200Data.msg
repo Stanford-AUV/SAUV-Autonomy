@@ -1,10 +1,10 @@
 Header header
 
-time ros_time
+#time ros_time
 
 time imu_time
 
-bool triggered_dvl
+#bool triggered_dvl
 
 geometry_msgs/Vector3 orientation
 
