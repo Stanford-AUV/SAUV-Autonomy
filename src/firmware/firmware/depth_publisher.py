@@ -2,7 +2,8 @@ import rclpy
 import ms5837
 
 from rclpy.node import Node
-from std_msgs.msg import Float64
+# from std_msgs.msg import Float64
+from msgs.msg import DepthData as Depth
 
 MODE = 0 # MODE 0 is freshwater, MODE 1 is saltwater
 
@@ -12,10 +13,8 @@ class DepthPublisher(Node):
 
     def __init__(self):
         super().__init__('depth_publisher')
-        self.pressure_publisher_ = self.create_publisher(Float64, 'depth_sensor/pressure_psi', 10)
-        self.depth_publisher_ = self.create_publisher(Float64, 'depth_sensor/depth_meter', 10)
-        self.temp_publisher_ = self.create_publisher(Float64, 'depth_sensor/temp_celsius', 10)
-        timer_period = 0.03  # seconds
+        self.publisher_ = self.create_publisher(Depth, '/depth/data', 10)
+        timer_period = 0.03  # seconds, determined empirically...
         self.timer = self.create_timer(timer_period, self.timer_callback)
 
         if not sensor.init():
@@ -32,7 +31,7 @@ class DepthPublisher(Node):
             self.get_logger().error(f'Could not read depth sensor!')
             sys.exit(1)  # Exit the node with an error code
 
-        pressure_data= sensor.pressure(ms5837.UNITS_psi)
+        pressure_data = sensor.pressure(ms5837.UNITS_psi)
         depth_data = sensor.depth()
         temp_data = sensor.temperature()
 
@@ -40,18 +39,14 @@ class DepthPublisher(Node):
         self.get_logger().info(f'Starting measurement...')
 
     def timer_callback(self):
-        pressure_msg = Float64()
-        depth_msg = Float64()
-        temp_msg = Float64()
+        depth_msg = Depth()
         
         if sensor.read():
-            pressure_msg.data = sensor.pressure(ms5837.UNITS_psi)
-            depth_msg.data = sensor.depth()
-            temp_msg.data = sensor.temperature()
+            depth_msg.pressure = sensor.pressure(ms5837.UNITS_psi)
+            depth_msg.depth = sensor.depth()
+            depth_msg.temperature = sensor.temperature()
         
-            self.pressure_publisher_.publish(pressure_msg)
-            self.depth_publisher_.publish(depth_msg)
-            self.temp_publisher_.publish(temp_msg)
+            self.publisher_.publish(depth_msg)
 
             # self.get_logger().info(f'Publishing Pressure: {pressure_msg.data:.2f} m, Depth: {depth_msg.data:.2f} m, Temperature: {temp_msg.data:.2f} degC')
         else:
