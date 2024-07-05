@@ -5,8 +5,8 @@ import math
 from rclpy.node import Node
 from std_msgs.msg import Float64
 from msgs.msg import (
-    SensorSync as SyncMsg
-    MTi200Data as Imu
+    SensorSync as SyncMsg 
+    MTi200Data as Imu 
 )
 from geometry_msgs.msg import Twist
 from message_filters import Subscriber, ApproximateTimeSynchronizer
@@ -24,6 +24,8 @@ class SyncFilter(Node):
         self.dvl_sub = Subscriber(self, Twist, 'dvl/velocity')
         self.imu_sub = Subscriber(self, Imu, 'imu_sensor/imu')
         self.depth_sub = Subscriber(self, Float64, 'depth_sensor/depth_meter')
+
+        # TODO: ALSO SUBSCRIBE TO ALL OTHER CRITICAL IMU MESSAGES
 
         # synchronize DVL, IMU, Depth data
         self.ts_caseA = ApproximateTimeSynchronizer( # case A: all messages available
