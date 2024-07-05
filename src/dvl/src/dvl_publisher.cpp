@@ -49,32 +49,54 @@ class DvlPublisher : public rclcpp::Node
   private:
     void init_port()
     {
-        fd_ = open(DVL_PORT, O_RDWR | O_NOCTTY);
-        if (fd_ < 0) {
-            RCLCPP_ERROR(this->get_logger(), "Unable to open port");
-            return;
+      fd_ = open(DVL_PORT, O_RDWR | O_NOCTTY);
+      if (fd_ < 0) {
+          RCLCPP_ERROR(this->get_logger(), "Unable to open port");
+          return;
+      }
+
+      struct termios tty;
+      tcgetattr(fd_, &tty);
+      cfsetospeed(&tty, B115200);
+      cfsetispeed(&tty, B115200);
+      tty.c_cflag |= (CLOCAL | CREAD);    // Enable the receiver and set local mode
+      tty.c_cflag &= ~PARENB;             // No parity bit
+      tty.c_cflag &= ~CSTOPB;             // 1 stop bit
+      tty.c_cflag &= ~CSIZE;              // Mask character size bits
+      tty.c_cflag |= CS8;                 // 8 data bits
+
+      tty.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG); // Raw input, no echo, no signals
+
+      // Setting Input Modes (c_iflag)
+      tty.c_iflag &= ~(IXON | IXOFF | IXANY); // Turn off software flow control
+      tty.c_iflag &= ~(IGNBRK | BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL); // Disable special handling of received bytes
+
+      // Setting Output Modes (c_oflag)
+      tty.c_oflag &= ~OPOST; // Raw output
+      tcsetattr(fd_, TCSANOW, &tty);
+
+      send_dvl_configuration();
+    }
+
+    void send_dvl_configuration()
+    {
+        const char *config_commands[] = {
+            "COMMAND_1", // Replace with actual command
+            "COMMAND_2", // Replace with actual command
+            "COMMAND_3", // Replace with actual command
+            // Add more commands as needed
+        };
+        const size_t num_commands = sizeof(config_commands) / sizeof(config_commands[0]);
+
+        for (size_t i = 0; i < num_commands; ++i) {
+            int bytes_written = write(fd_, config_commands[i], strlen(config_commands[i]));
+            if (bytes_written < 0) {
+                RCLCPP_ERROR(this->get_logger(), "Failed to send configuration command %zu", i + 1);
+            } else {
+                RCLCPP_INFO(this->get_logger(), "Configuration command %zu sent successfully", i + 1);
+            }
+            usleep(100000); // Optional: add a small delay between commands (100ms)
         }
-
-        struct termios tty;
-        tcgetattr(fd_, &tty);
-        cfsetospeed(&tty, B115200);
-        cfsetispeed(&tty, B115200);
-        tty.c_cflag |= (CLOCAL | CREAD);    // Enable the receiver and set local mode
-        tty.c_cflag &= ~PARENB;             // No parity bit
-        tty.c_cflag &= ~CSTOPB;             // 1 stop bit
-        tty.c_cflag &= ~CSIZE;              // Mask character size bits
-        tty.c_cflag |= CS8;                 // 8 data bits
-
-        tty.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG); // Raw input, no echo, no signals
-
-        // Setting Input Modes (c_iflag)
-        tty.c_iflag &= ~(IXON | IXOFF | IXANY); // Turn off software flow control
-        tty.c_iflag &= ~(IGNBRK | BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL); // Disable special handling of received bytes
-
-        // Setting Output Modes (c_oflag)
-        tty.c_oflag &= ~OPOST; // Raw output
-        tcsetattr(fd_, TCSANOW, &tty);
-        
     }
 
     void init_decoder()
