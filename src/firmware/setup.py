@@ -21,7 +21,8 @@ setup(
     entry_points={
         'console_scripts': [
             'depth_talker = firmware.depth_publisher:main',
-            'sync_filter = firmware.sync_filter:main'
+            'sync_filter = firmware.sync_filter:main',
+            'sync_imu = firmware.sync_imu:main'
         ],
     },
 )

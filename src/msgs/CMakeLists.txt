@@ -32,11 +32,13 @@ set(msg_files
   "msg/Pose.msg"
   "msg/State.msg"
   "msg/Wrench.msg"
+  "msg/MTi200Data.msg"
+  "msg/SensorSync.msg"
 )
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   ${msg_files}
-  DEPENDENCIES geometry_msgs sensor_msgs std_msgs
+  DEPENDENCIES geometry_msgs sensor_msgs std_msgs 
 )
 
 ament_package()

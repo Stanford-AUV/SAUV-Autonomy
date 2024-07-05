@@ -1,8 +1,8 @@
-Header header
+std_msgs/Header header
 
 #time ros_time
 
-time imu_time
+sensor_msgs/TimeReference imu_time
 
 #bool triggered_dvl
 
