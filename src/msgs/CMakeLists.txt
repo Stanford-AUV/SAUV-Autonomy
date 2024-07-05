@@ -34,6 +34,7 @@ set(msg_files
   "msg/Wrench.msg"
   "msg/MTi200Data.msg"
   "msg/SensorSync.msg"
+  "msg/DepthData.msg"
 )
 
 rosidl_generate_interfaces(${PROJECT_NAME}
