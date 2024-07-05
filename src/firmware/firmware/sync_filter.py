@@ -21,9 +21,9 @@ class SyncFilter(Node):
         self.sync_publisher_ = self.create_publisher(SyncMsg, '/imu_dvl_synchronized_data', 10)
         self.last_imu_sync_ts_sec = math.nan
 
-        self.dvl_sub = Subscriber(self, Twist, 'dvl/velocity')
+        self.dvl_sub = Subscriber(self, Twist, '/dvl/velocity')
         self.imu_sub = Subscriber(self, Imu, '/imu_synchronized_data')
-        self.depth_sub = Subscriber(self, Float64, 'depth_sensor/depth_meter')
+        self.depth_sub = Subscriber(self, Float64, '/depth_sensor/depth_meter')
 
         # TODO: ALSO SUBSCRIBE TO ALL OTHER CRITICAL IMU MESSAGES
 
