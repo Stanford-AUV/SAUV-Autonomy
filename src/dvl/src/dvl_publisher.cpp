@@ -33,8 +33,10 @@ class DvlPublisher : public rclcpp::Node
             std::chrono::milliseconds(PUBLISH_TIME_MS),
             std::bind(&DvlPublisher::timer_callback, this));
       init_port();
+      init_dvl();
       init_decoder();
-      //one more to force PD0 on DVL?
+
+      RCLCPP_INFO(this->get_logger(), "Running DVL measurements");
     }
 
     ~DvlPublisher()
@@ -74,26 +76,28 @@ class DvlPublisher : public rclcpp::Node
       // Setting Output Modes (c_oflag)
       tty.c_oflag &= ~OPOST; // Raw output
       tcsetattr(fd_, TCSANOW, &tty);
-
-      send_dvl_configuration();
     }
 
-    void send_dvl_configuration()
+    void init_dvl()
     {
         const char *config_commands[] = {
-            "COMMAND_1", // Replace with actual command
-            "COMMAND_2", // Replace with actual command
-            "COMMAND_3", // Replace with actual command
-            // Add more commands as needed
+            "CB811\r",        // 115200 baud, no parity, 1 stop bit
+            "#PD0\r",         // standard DVL format, machine readable
+            "#CT1\r",         // turnkey operation (within 10s)
+            "TE00:00:00.00\r", // ping time is as fast as possible
+            "BX00120\r",       // ensure max ping range (12m)
+            "EA+04500\r",      // heading alignment of the DVL
+            "CK\r",            // save configuration
+            "CS\r",           // begin reading
         };
         const size_t num_commands = sizeof(config_commands) / sizeof(config_commands[0]);
 
         for (size_t i = 0; i < num_commands; ++i) {
             int bytes_written = write(fd_, config_commands[i], strlen(config_commands[i]));
             if (bytes_written < 0) {
-                RCLCPP_ERROR(this->get_logger(), "Failed to send configuration command %zu", i + 1);
+                RCLCPP_ERROR(this->get_logger(), "Failed to send DVL configuration command %zu", i + 1);
             } else {
-                RCLCPP_INFO(this->get_logger(), "Configuration command %zu sent successfully", i + 1);
+                RCLCPP_INFO(this->get_logger(), "DVL Configuration command %zu sent successfully", i + 1);
             }
             usleep(100000); // Optional: add a small delay between commands (100ms)
         }
@@ -128,14 +132,15 @@ class DvlPublisher : public rclcpp::Node
           found = tdym::PDD_GetPD0Ensemble(decoder, &ens);
           if (found)
           {
-            RCLCPP_INFO(this->get_logger(), "Ensemble found!");
+            // RCLCPP_INFO(this->get_logger(), "Ensemble found!");
 
             double velArray[FOUR_BEAMS];
             tdym::PDD_GetVesselVelocities(&ens, velArray);
-            geometry_msgs::msg::Twist velMessage; // NOTE: not sure what the order or meaning of the four means are!
+            geometry_msgs::msg::velocity velMessage; // NOTE: not sure what the order or meaning of the four means are!
             velMessage.linear.x = velArray[0];
             velMessage.linear.y = velArray[1];
             velMessage.linear.z = velArray[2];
+
             publisher_->publish(velMessage);
           }
         } while (found > 0);
