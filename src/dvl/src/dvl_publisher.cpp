@@ -19,7 +19,7 @@
  * 
  * ***/
 
-#define DVL_PORT "/dev/ttyUSB0" // this must be found first!!
+#define DVL_PORT "/dev/ttyUSB_DVL" // see udev rules at /etc/udev/rules.d/99-usb-serial.rules
 #define BUFFER_SIZE 256
 #define PUBLISH_TIME_MS 1
 
