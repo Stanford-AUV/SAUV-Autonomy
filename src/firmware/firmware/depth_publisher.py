@@ -42,6 +42,7 @@ class DepthPublisher(Node):
         depth_msg = Depth()
         
         if sensor.read():
+            depth_msg.header.stamp = self.get_clock().now().to_msg()
             depth_msg.pressure = sensor.pressure(ms5837.UNITS_psi)
             depth_msg.depth = sensor.depth()
             depth_msg.temperature = sensor.temperature()
