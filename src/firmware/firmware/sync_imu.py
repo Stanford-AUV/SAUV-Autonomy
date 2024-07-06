@@ -31,9 +31,10 @@ class ImuGrouper(Node):
 
 
     def callback(self, sample_time, quat, free_accel, linear_accel):
-        
         # Bundle the messages into a single synchronized message
         imu_synced = Imu()
+
+        imu_synced.header.stamp = self.get_clock().now().to_msg()
 
         # IMU sample time
         imu_synced.imu_time = sample_time

@@ -10,7 +10,7 @@
 #include "PDD_Include.h"
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/string.hpp"
-#include "geometry_msgs/msg/twist.hpp"
+#include "geometry_msgs/msg/twist_stamped.hpp"
 
 /***
  * 
@@ -30,7 +30,7 @@ class DvlPublisher : public rclcpp::Node
   public:
     DvlPublisher() : Node("dvl_publisher")
     {
-      publisher_ = this->create_publisher<geometry_msgs::msg::Twist>("/dvl/velocity", 10);
+      publisher_ = this->create_publisher<geometry_msgs::msg::TwistStamped>("/dvl/twist", 10);
       timer_ = this->create_wall_timer(
             std::chrono::milliseconds(PUBLISH_TIME_MS),
             std::bind(&DvlPublisher::timer_callback, this));
@@ -138,10 +138,11 @@ class DvlPublisher : public rclcpp::Node
 
             double velArray[FOUR_BEAMS];
             tdym::PDD_GetVesselVelocities(&ens, velArray);
-            geometry_msgs::msg::Twist velMessage; // NOTE: not sure what the order or meaning of the four means are!
-            velMessage.linear.x = velArray[0];
-            velMessage.linear.y = velArray[1];
-            velMessage.linear.z = velArray[2];
+            geometry_msgs::msg::TwistStamped velMessage; // NOTE: not sure what the order or meaning of the four means are!
+            velMessage.header.stamp = this->now();
+            velMessage.twist.linear.x = velArray[0];
+            velMessage.twist.linear.y = velArray[1];
+            velMessage.twist.linear.z = velArray[2];
 
             publisher_->publish(velMessage);
             if (firstEnsemble == false){
@@ -156,7 +157,7 @@ class DvlPublisher : public rclcpp::Node
 
   //Variables
   rclcpp::TimerBase::SharedPtr timer_;
-  rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr publisher_;
+  rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr publisher_;
   int fd_;
   unsigned char* buffer = new unsigned char[BUFFER_SIZE];
   tdym::PDD_Decoder* decoder = new tdym::PDD_Decoder();
