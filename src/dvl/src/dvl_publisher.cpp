@@ -21,7 +21,9 @@
 
 #define DVL_PORT "/dev/ttyUSB0" // this must be found first!!
 #define BUFFER_SIZE 256
-#define PUBLISH_TIME_MS 10
+#define PUBLISH_TIME_MS 1
+
+bool firstEnsemble = false;
 
 class DvlPublisher : public rclcpp::Node
 {
@@ -136,16 +138,20 @@ class DvlPublisher : public rclcpp::Node
 
             double velArray[FOUR_BEAMS];
             tdym::PDD_GetVesselVelocities(&ens, velArray);
-            geometry_msgs::msg::velocity velMessage; // NOTE: not sure what the order or meaning of the four means are!
+            geometry_msgs::msg::Twist velMessage; // NOTE: not sure what the order or meaning of the four means are!
             velMessage.linear.x = velArray[0];
             velMessage.linear.y = velArray[1];
             velMessage.linear.z = velArray[2];
 
             publisher_->publish(velMessage);
+            if (firstEnsemble == false){
+              RCLCPP_INFO(this->get_logger(), "DVL node is publishing succesfully");
+              firstEnsemble = true; 
+            }
           }
         } while (found > 0);
-        
       }
+      
     }
 
   //Variables
