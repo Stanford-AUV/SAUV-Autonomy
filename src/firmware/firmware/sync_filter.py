@@ -58,10 +58,12 @@ class SyncFilter(Node):
         self.get_logger().info(f'Running IMU/DVL/Depth data synchronization')
 
     def sync_callback_A(self, dvl_msg, imu_msg, depth_msg):
-        self.get_logger().info(f'AA')
+        # self.get_logger().info(f'AA')
         self.last_imu_sync_ts_sec = imu_msg.header.stamp.sec # update most recent IMU time for valid full sync
 
         sync_msg = SyncMsg()
+        sync_msg.header.stamp = self.last_imu_sync_ts_sec
+
         sync_msg.dvl_available = Bool(data=True)
         sync_msg.dvl_data = dvl_msg.twist
 
@@ -77,8 +79,10 @@ class SyncFilter(Node):
     def sync_callback_B(self, dvl_msg, imu_msg):
         CurrTS = imu_msg.header.stamp 
         if CurrTS != self.last_imu_sync_ts_sec: # if time is the same as full sync, ignore since we've already pub'd
-            self.get_logger().info(f'B')
+            # self.get_logger().info(f'B')
             sync_msg = SyncMsg()
+            sync_msg.header.stamp = CurrTS
+            
             sync_msg.dvl_available = Bool(data=True)
             sync_msg.dvl_data = dvl_msg.twist
 
@@ -94,8 +98,10 @@ class SyncFilter(Node):
     def sync_callback_C(self, imu_msg, depth_msg):
         CurrTS = imu_msg.header.stamp
         if CurrTS != self.last_imu_sync_ts_sec: # if time is the same as full sync, ignore since we've already pub'd
-            self.get_logger().info(f'C')
+            # self.get_logger().info(f'C')
             sync_msg = SyncMsg()
+            sync_msg.header.stamp = CurrTS
+
             sync_msg.dvl_available = Bool(data=False)
 
             dvl_msg = Twist()
@@ -119,8 +125,10 @@ class SyncFilter(Node):
     def sync_callback_D(self, imu_msg):
         CurrTS = imu_msg.header.stamp
         if CurrTS != self.last_imu_sync_ts_sec: # if time is the same as full sync, ignore since we've already pub'd
-            self.get_logger().info(f'D')
+            # self.get_logger().info(f'D')
             sync_msg = SyncMsg()
+            sync_msg.header.stamp = CurrTS
+
             sync_msg.dvl_available = Bool(data=False)
 
             dvl_msg = Twist()
