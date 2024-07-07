@@ -12,8 +12,8 @@ class Arduino(Node):
         self._subscribers = []
 
         try:
-            self.portName = serial.Serial("/dev/ttyACM0", baudrate=9600, timeout=1)
-            self.get_logger().info(f"Serial port /dev/ttyACM0 opened successfully.")
+            self.portName = serial.Serial("/dev/ttyUSB_teensy", baudrate=9600, timeout=1)
+            self.get_logger().info(f"Serial port /dev/ttyUSB_teensy opened successfully.")
         except serial.SerialException as e:
             self.get_logger().error(f"Failed to open serial port: {e}")
             return
