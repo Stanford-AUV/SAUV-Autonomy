@@ -16,7 +16,7 @@ class ImuGrouper(Node):
         super().__init__('imu_grouper')
 
         self.sample_time = Subscriber(self, TimeReference, '/imu/time_ref')
-        self.twist = Subscriber(self, TwistStamped, '/filter/twist') # NOTE: currently missing- we do not have this printing for some reason!
+        self.angvel = Subscriber(self, Vector3Stamped, '/imu/angular_velocity') # NOTE: why does /filter/twist not publish? --> use angular velocity for now
         self.quat = Subscriber(self, QuaternionStamped, '/filter/quaternion')
         self.free_accel = Subscriber(self, Vector3Stamped, '/filter/free_acceleration')
         self.linear_accel = Subscriber(self, Vector3Stamped, '/imu/acceleration')
@@ -24,13 +24,13 @@ class ImuGrouper(Node):
         self.publisher_ = self.create_publisher(Imu, '/imu_synchronized_data', 10)
         
         # TimeSynchronizer
-        self.ts = TimeSynchronizer([self.sample_time, self.quat, self.free_accel, self.linear_accel], 10)
+        self.ts = TimeSynchronizer([self.sample_time, self.angvel, self.quat, self.free_accel, self.linear_accel], 10)
         self.ts.registerCallback(self.callback)
 
         self.get_logger().info(f'Running IMU data synchronization')
 
 
-    def callback(self, sample_time, quat, free_accel, linear_accel):
+    def callback(self, sample_time, angvel, quat, free_accel, linear_accel):
         # Bundle the messages into a single synchronized message
         imu_synced = Imu()
 
@@ -40,9 +40,9 @@ class ImuGrouper(Node):
         imu_synced.imu_time = sample_time
 
         # Extract Euler rate of turn from twist
-        imu_synced.rate_of_turn.x = math.nan
-        imu_synced.rate_of_turn.y = math.nan
-        imu_synced.rate_of_turn.z = math.nan
+        imu_synced.rate_of_turn.x = angvel.vector.x
+        imu_synced.rate_of_turn.y = angvel.vector.y
+        imu_synced.rate_of_turn.z = angvel.vector.z
 
         # Convert quaternion to Euler representation 
         euler = tf_transformations.euler_from_quaternion([quat.quaternion.x, quat.quaternion.y, quat.quaternion.z, quat.quaternion.w])

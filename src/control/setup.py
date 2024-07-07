@@ -28,7 +28,8 @@ setup(
             f"controller = {package_name}.controller:main",
             f"imu = {package_name}.imu:main",
             f"joystick = {package_name}.joystick:main",
-            f"forward_publisher = {package_name}.forward_publisher:main"
+            f"forward_publisher = {package_name}.forward_publisher:main",
+            f"imu_noise_estimator = {package_name}.imu_noise_estimator:main"
         ],
     },
 )
