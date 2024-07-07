@@ -195,12 +195,21 @@ class StateEstimation(Node):
         state_msg.linear_velocity = velocity
         state_msg.linear_acceleration = acceleration
 
+        state_msg.orientation_euler = orientation
+
         orientation_array = np.array([orientation.x, orientation.y, orientation.z])
         quaternion = Rotation.from_euler('xyz', orientation_array).as_quat()
         state_msg.orientation.x = quaternion[0]
         state_msg.orientation.y = quaternion[1]
         state_msg.orientation.z = quaternion[2]
         state_msg.orientation.w = quaternion[3]
+
+        angular_velocity_array = np.array([angular_velocity.x, angular_velocity.y, angular_velocity.z])
+        angular_velocity_quat = Rotation.from_euler('xyz', angular_velocity_array).as_quat()
+        state_msg.angular_velocity.x = angular_velocity_quat[0]
+        state_msg.angular_velocity.y = angular_velocity_quat[1]
+        state_msg.angular_velocity.z = angular_velocity_quat[2]
+        state_msg.angular_velocity.w = angular_velocity_quat[3]
 
         # Publish state message
         self._state_pub.publish(state_msg)

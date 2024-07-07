@@ -6,11 +6,13 @@
 #include <fcntl.h>
 #include <termios.h>
 #include <unistd.h>
+#include <cmath> // for std::isinf
 
 #include "PDD_Include.h"
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/string.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
+
 
 /***
  * 
@@ -22,6 +24,7 @@
 #define DVL_PORT "/dev/ttyUSB_DVL" // see udev rules at /etc/udev/rules.d/99-usb-serial.rules
 #define BUFFER_SIZE 256
 #define PUBLISH_TIME_MS 1
+#define ELIMINATE_INF true
 
 bool firstEnsemble = false;
 
@@ -138,6 +141,12 @@ class DvlPublisher : public rclcpp::Node
 
             double velArray[FOUR_BEAMS];
             tdym::PDD_GetVesselVelocities(&ens, velArray);
+            if (ELIMINATE_INF){
+              if(std::isinf(velArray[0]) || std::isinf(velArray[1]) || std::isinf(velArray[2])){
+                continue; //skip if any are infinity!
+              }
+            }
+
             geometry_msgs::msg::TwistStamped velMessage; // NOTE: not sure what the order or meaning of the four means are!
             velMessage.header.stamp = this->now();
             velMessage.twist.linear.x = velArray[0];
