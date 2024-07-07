@@ -12,7 +12,7 @@ from msgs.msg import (
 from geometry_msgs.msg import TwistStamped, Twist
 from message_filters import Subscriber, ApproximateTimeSynchronizer
 
-ACCEPTABLE_SLOP = 0.01 # message arrival tolerance (s)
+ACCEPTABLE_SLOP = 0.01 # message arrival tolerance (s) -- NOTE: the IMU is running at 100 Hz. 
 
 class SyncFilter(Node):
 

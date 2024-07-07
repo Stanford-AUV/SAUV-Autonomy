@@ -69,10 +69,9 @@ class StateEstimation(Node):
 
         # Initialization parameters in StateEstimation class
         # NOTE: orientation covariance: 0.2 deg RMS --> 1.218e-5 
-        # NOTE: linear accel. covariance at 100 Hz sample rate --> (60 microg/sqrt(Hz))^2 * 100 --> 3.6e-7
-        self._imu_covariance = np.array([0.01,0.01, 0.01, 0.01, 0.01, 0.01])  # Adjust based on your IMU specifications
+        self._imu_covariance = np.array([1.218e-5 , 1.218e-5 ,1.218e-5 , 1.54545378e-04,   1.63320184e-04, 3.22157790e-05])  # Adjust based on your IMU specifications
         self._dvl_covariance = np.array([0.1, 0.1, 0.1]) 
-        self._depth_covariance = np.array([0.01])  # Adjust based on your depth sensor specifications
+        self._depth_covariance = np.array([7.196207822120195e-06])  # Adjust based on your depth sensor specifications
 
 
         self._ekf = EKF(dvl_offset, process_covariance)
@@ -142,9 +141,9 @@ class StateEstimation(Node):
         ])
 
         linear_acceleration = np.array([
-            imu_data.linear_acceleration.x,
-            imu_data.linear_acceleration.y,
-            imu_data.linear_acceleration.z
+            imu_data.free_acceleration.x,
+            imu_data.free_acceleration.y,
+            imu_data.free_acceleration.z
         ])
 
         covariance = self._imu_covariance
