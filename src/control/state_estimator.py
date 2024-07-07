@@ -43,33 +43,34 @@ class StateEstimation(Node):
             SensorSync, "/IDD_synchronized_data", self._receive_msg, qos_profile
         )
 
-        self._dt = Duration(seconds=1.0)  # TODO: Don't hardcode this
-        self._horizon_delay = Duration(seconds=0.4)  # TODO: Don't hardcode this
+        self._dt = Duration(seconds=0.01)  # TODO: Don't hardcode this
+        self._horizon_delay = Duration(seconds=0.004)  # TODO: Don't hardcode this
 
         dvl_offset = np.array([-0.16256, 0, 0.110236])  # TODO: Don't hardcode this
         process_covariance = np.array(
             [
-                0.0,
-                0.0,
-                0.0,
-                0.0,
-                0.0,
-                0.0,
-                0.0,
-                0.0,
-                0.0,
-                0.0,
-                0.0,
-                0.0,
-                0.0,
-                0.0,
-                0.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
             ]
         )  # TODO: Don't hardcode this
+        process_covariance = 1e-6*process_covariance
 
         # Initialization parameters in StateEstimation class
         # NOTE: orientation covariance: 0.2 deg RMS --> 1.218e-5 
-        self._imu_covariance = np.array([1.218e-5 , 1.218e-5 ,1.218e-5 , 1.54545378e-04,   1.63320184e-04, 3.22157790e-05])  # Adjust based on your IMU specifications
+        self._imu_covariance = np.array([1.218e-5, 1.218e-5, 1.218e-5, 1.35e-6, 1.35e-6, 1.35e-6])  # Adjust based on your IMU specifications
         self._dvl_covariance = np.array([0.1, 0.1, 0.1]) 
         self._depth_covariance = np.array([7.196207822120195e-06])  # Adjust based on your depth sensor specifications
 
