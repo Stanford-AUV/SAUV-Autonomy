@@ -1,4 +1,6 @@
 from setuptools import find_packages, setup
+import os
+from glob import glob
 
 package_name = "control"
 
@@ -9,6 +11,7 @@ setup(
     data_files=[
         ("share/ament_index/resource_index/packages", ["resource/" + package_name]),
         ("share/" + package_name, ["package.xml"]),
+        (os.path.join('share', package_name, 'launch'), glob('launch/*.py')),
     ],
     install_requires=["setuptools"],
     zip_safe=True,
@@ -25,7 +28,8 @@ setup(
             f"controller = {package_name}.controller:main",
             f"imu = {package_name}.imu:main",
             f"joystick = {package_name}.joystick:main",
-            f"forward_publisher = {package_name}.forward_publisher:main"
+            f"forward_publisher = {package_name}.forward_publisher:main",
+            f"imu_noise_estimator = {package_name}.imu_noise_estimator:main"
         ],
     },
 )

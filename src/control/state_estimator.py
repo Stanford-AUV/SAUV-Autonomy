@@ -9,16 +9,15 @@ from dataclasses import dataclass, field
 
 from scipy.spatial.transform import Rotation
 from control.utils import to_np as tl
-from msgs.msg import (
-    State as StateMsg,
-    # TeledyneDvlData as DvlMsg,
-    # FluidDepth as DepthMsg,
-)
+from msgs.msg import State as StateMsg
 from sensor_msgs.msg import Imu as ImuMsg
-from ros_gz_interfaces.msg import Altimeter as DepthMsg
 from std_msgs.msg import Header
 from tf2_ros import TransformBroadcaster
 from rclpy.time import Time
+
+from msgs.msg import SensorSync, MTi200Data
+from geometry_msgs.msg import Twist
+from std_msgs.msg import Bool
 
 from .ekf import EKF
 
@@ -40,43 +39,41 @@ class StateEstimation(Node):
 
         self._state_pub = self.create_publisher(StateMsg, "state", qos_profile)
 
-        self._imu_sub = self.create_subscription(
-            ImuMsg, "imu", self._receive_msg, qos_profile
-        )
-        # self._dvl_sub = self.create_subscription(
-        #     DvlMsg, "/teledyne_dvl/data", self._receive_msg, qos_profile
-        # )
-        self._depth_sub = self.create_subscription(
-            DepthMsg, "depth", self._receive_msg, qos_profile
+        self._sensor_sync_sub = self.create_subscription(
+            SensorSync, "/IDD_synchronized_data", self._receive_msg, qos_profile
         )
 
-        self._dt = Duration(seconds=1.0)  # TODO: Don't hardcode this
-        self._horizon_delay = Duration(seconds=0.4)  # TODO: Don't hardcode this
+        self._dt = Duration(seconds=0.01)  # TODO: Don't hardcode this
+        self._horizon_delay = Duration(seconds=0.004)  # TODO: Don't hardcode this
 
         dvl_offset = np.array([-0.16256, 0, 0.110236])  # TODO: Don't hardcode this
         process_covariance = np.array(
             [
-                0.0,
-                0.0,
-                0.0,
-                0.0,
-                0.0,
-                0.0,
-                0.0,
-                0.0,
-                0.0,
-                0.0,
-                0.0,
-                0.0,
-                0.0,
-                0.0,
-                0.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
             ]
         )  # TODO: Don't hardcode this
+        process_covariance = 1e-6*process_covariance
 
-        self._imu_covariance = np.array([0, 0, 0, 0, 0, 0])  # TODO: Don't hardcode this
-        self._dvl_covariance = np.array([0, 0, 0])  # TODO: Don't hardcode this
-        self._depth_covariance = np.array([0])  # TODO: Don't hardcode this
+        # Initialization parameters in StateEstimation class
+        # NOTE: orientation covariance: 0.2 deg RMS --> 1.218e-5 
+        self._imu_covariance = np.array([1.218e-5, 1.218e-5, 1.218e-5, 1.35e-6, 1.35e-6, 1.35e-6])  # Adjust based on your IMU specifications
+        self._dvl_covariance = np.array([0.1, 0.1, 0.1]) 
+        self._depth_covariance = np.array([7.196207822120195e-06])  # Adjust based on your depth sensor specifications
+
 
         self._ekf = EKF(dvl_offset, process_covariance)
         self._msg_queue = PriorityQueue()
@@ -91,14 +88,14 @@ class StateEstimation(Node):
         self._initialized = True
         self._timer = self.create_timer(self._dt.nanoseconds / 1e9, self._update)
 
-    def _receive_msg(self, msg: ImuMsg):
+    def _receive_msg(self, msg: SensorSync):
         if not self._initialized:
             return
 
-        if msg.header.stamp._sec < self._last_horizon_time.seconds_nanoseconds()[0]:
+        if msg.header.stamp.sec < self._last_horizon_time.seconds_nanoseconds()[0]:
             return
 
-        stamped_msg = StampedMsg(msg.header.stamp._sec, msg)
+        stamped_msg = StampedMsg(msg.header.stamp.sec, msg)
         self._msg_queue.put(stamped_msg)
 
     def _update(self):
@@ -114,12 +111,12 @@ class StateEstimation(Node):
             stamped_msg = self._msg_queue.get()
             if stamped_msg.time < horizon_time.nanoseconds:
                 msg = stamped_msg.msg
-                if isinstance(msg, ImuMsg):
-                    self._handle_imu(msg)
-                # elif isinstance(msg, DvlMsg):
-                #     self._handle_dvl(msg)
-                elif isinstance(msg, DepthMsg):
-                    self._handle_depth(msg)
+                if msg.imu_available.data:
+                    self._handle_imu(msg.imu_data)
+                if msg.dvl_available.data:
+                    self._handle_dvl(msg.dvl_data)
+                if msg.depth_available.data:
+                    self._handle_depth(msg.depth_data)
             else:
                 self._msg_queue.put(stamped_msg)
                 break
@@ -127,18 +124,28 @@ class StateEstimation(Node):
 
         self._last_horizon_time = horizon_time
 
-    def _handle_imu(self, msg: ImuMsg):
+    def _handle_imu(self, imu_data: MTi200Data):
         if not self._initialized:
             return
 
         timestamp = Time(
-            seconds=msg.header.stamp.sec,
-            nanoseconds=msg.header.stamp.nanosec,
+            seconds=imu_data.header.stamp.sec,
+            nanoseconds=imu_data.header.stamp.nanosec,
             clock_type=self.get_clock().clock_type,
         )
 
-        orientation = Rotation.from_quat(tl(msg.orientation)).as_euler("XYZ")
-        linear_acceleration = tl(msg.linear_acceleration)
+        # Extract orientation directly as Euler angles
+        orientation = np.array([
+            imu_data.orientation.x,
+            imu_data.orientation.y,
+            imu_data.orientation.z
+        ])
+
+        linear_acceleration = np.array([
+            imu_data.free_acceleration.x,
+            imu_data.free_acceleration.y,
+            imu_data.free_acceleration.z
+        ])
 
         covariance = self._imu_covariance
 
@@ -146,39 +153,28 @@ class StateEstimation(Node):
             orientation, linear_acceleration, covariance, timestamp
         )
 
-    def _handle_dvl(self, msg):
+    def _handle_dvl(self, dvl_data: Twist):
         if not self._initialized:
             return
 
-        timestamp = Time(
-            seconds=msg.header.stamp.sec,
-            nanoseconds=msg.header.stamp.nanosec,
-            clock_type=self.get_clock().clock_type,
-        )
+        timestamp = self.get_clock().now()  # Using current time, adjust if needed
 
-        if not msg.is_hr_velocity_valid:
-            return
-
-        velocity = tl(msg.hr_velocity)
-        beam_std_dev = sum(msg.beam_standard_deviations) / 4.0
-
-        covariance = self._dvl_covariance * np.array(
-            [beam_std_dev, beam_std_dev, beam_std_dev]
-        )
+        velocity = np.array([
+            dvl_data.linear.x,
+            dvl_data.linear.y,
+            dvl_data.linear.z
+        ])
+        covariance = self._dvl_covariance
 
         self._ekf.handle_dvl_measurement(velocity, covariance, timestamp)
 
-    def _handle_depth(self, msg: DepthMsg):
+    def _handle_depth(self, depth_data: float):
         if not self._initialized:
             return
 
-        timestamp = Time(
-            seconds=msg.header.stamp.sec,
-            nanoseconds=msg.header.stamp.nanosec,
-            clock_type=self.get_clock().clock_type,
-        )
+        timestamp = self.get_clock().now()  # Using current time, adjust if needed
 
-        depth = np.array([msg.vertical_reference + msg.vertical_position])
+        depth = np.array([depth_data])
         covariance = self._depth_covariance
 
         self._ekf.handle_depth_measurement(depth, covariance, timestamp)
@@ -198,9 +194,22 @@ class StateEstimation(Node):
         state_msg.position = position
         state_msg.linear_velocity = velocity
         state_msg.linear_acceleration = acceleration
-        state_msg.orientation = orientation
-        state_msg.euler_velocity = angular_velocity
-        # TODO: state_msg.euler_acceleration
+
+        state_msg.orientation_euler = orientation
+
+        orientation_array = np.array([orientation.x, orientation.y, orientation.z])
+        quaternion = Rotation.from_euler('xyz', orientation_array).as_quat()
+        state_msg.orientation.x = quaternion[0]
+        state_msg.orientation.y = quaternion[1]
+        state_msg.orientation.z = quaternion[2]
+        state_msg.orientation.w = quaternion[3]
+
+        angular_velocity_array = np.array([angular_velocity.x, angular_velocity.y, angular_velocity.z])
+        angular_velocity_quat = Rotation.from_euler('xyz', angular_velocity_array).as_quat()
+        state_msg.angular_velocity.x = angular_velocity_quat[0]
+        state_msg.angular_velocity.y = angular_velocity_quat[1]
+        state_msg.angular_velocity.z = angular_velocity_quat[2]
+        state_msg.angular_velocity.w = angular_velocity_quat[3]
 
         # Publish state message
         self._state_pub.publish(state_msg)
