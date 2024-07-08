@@ -30,8 +30,8 @@ class Yolov8Node(LifecycleNode):
         super().__init__("yolov8_node")
 
         # params
-        self.declare_parameter("model", "yolov8m.pt")
-        self.declare_parameter("device", "cuda:0")
+        self.declare_parameter("model", "best.pt")
+        self.declare_parameter("device", "cpu")
         self.declare_parameter("threshold", 0.5)
         self.declare_parameter("enable", True)
         self.declare_parameter("image_reliability",
@@ -92,7 +92,7 @@ class Yolov8Node(LifecycleNode):
         # subs
         self._sub = self.create_subscription(
             Image,
-            "image_raw",
+            "oak/rgb/image_raw",
             self.image_cb,
             self.image_qos_profile
         )
@@ -179,7 +179,10 @@ class Yolov8Node(LifecycleNode):
             if results.boxes:
                 hypothesis = self.parse_hypothesis(results)
                 boxes = self.parse_boxes(results)
+                print("boxes:", boxes)
 
+            else:
+                print("empty")
             # create detection msgs
             detections_msg = DetectionArray()
 

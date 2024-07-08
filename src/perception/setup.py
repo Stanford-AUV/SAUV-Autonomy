@@ -20,7 +20,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'perception_node = perception.perception_node:main'
+            'perception_node = perception.perception_node:main',
+            'debug_node = perception.debug_node:main'
         ],
     },
 )
