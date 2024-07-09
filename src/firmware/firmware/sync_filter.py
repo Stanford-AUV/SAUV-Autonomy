@@ -100,6 +100,7 @@ class SyncFilter(Node):
         # self.get_logger().info(f'Publishing fully synchronized data: {sync_msg}')
 
     def sync_callback_B(self, dvl_msg, imu_msg):
+        # self.get_logger().info(f'B')
         CurrTS = imu_msg.header.stamp 
         if CurrTS != self.last_imu_sync_ts_sec: # if time is the same as full sync, ignore since we've already pub'd
             # self.get_logger().info(f'B')
