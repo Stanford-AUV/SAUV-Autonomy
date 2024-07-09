@@ -5,7 +5,7 @@ from typing import Optional, List, Tuple
 from rclpy.time import Time
 from geometry_msgs.msg import Vector3
 import numpy as np
-
+import scipy.linalg
 
 class StateIndex(IntEnum):
     X = 0
@@ -144,22 +144,24 @@ class EKF:
 
         S: np.array = (H @ self._covariance) @ np.transpose(H) + R
 
-        K: np.array = (self._covariance @ np.transpose(H)) @ np.linalg.pinv(S)
+        # Use Cholesky decomposition for numerical stability
+        try:
+            S_chol = scipy.linalg.cholesky(S, lower=True)
+            S_inv = scipy.linalg.inv(S_chol)
+            S_inv_T = S_inv.T
+            K = self._covariance @ np.transpose(H) @ S_inv_T @ S_inv
+        except np.linalg.LinAlgError:
+            # Fallback to direct inversion if Cholesky decomposition fails
+            K = (self._covariance @ np.transpose(H)) @ np.linalg.pinv(S)
 
         I: np.array = np.identity(EKF.NUM_FIELDS, float)
 
         self._state = self._state + np.matmul(K, y)
-        self._state = self._wrap_angles(
-            self._state, [StateIndex.YAW, StateIndex.PITCH, StateIndex.ROLL]
-        )
+        self._state = self._wrap_angles(self._state, [StateIndex.YAW, StateIndex.PITCH, StateIndex.ROLL])
 
-        self._covariance = ((I - (K @ H)) @ self._covariance) @ np.transpose(
-            I - (K @ H)
-        )
+        self._covariance = ((I - (K @ H)) @ self._covariance) @ np.transpose(I - (K @ H))
         self._covariance = self._covariance + (K @ R) @ np.transpose(K)
-        self._covariance = np.maximum(
-            np.abs(self._covariance), 1e-9 * np.identity(EKF.NUM_FIELDS, float)
-        )
+        self._covariance = np.maximum(np.abs(self._covariance), 1e-9 * np.identity(EKF.NUM_FIELDS, float))
 
     def _extrapolate_state(self, dt: float) -> np.array:
         F: np.array = self._get_F(dt)
