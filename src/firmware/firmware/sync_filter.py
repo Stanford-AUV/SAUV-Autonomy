@@ -2,6 +2,7 @@ import rclpy
 import ms5837
 import math
 
+import numpy as np
 from rclpy.node import Node
 from std_msgs.msg import Float64, Bool
 from msgs.msg import (
@@ -18,6 +19,18 @@ class SyncFilter(Node):
 
     def __init__(self):
         super().__init__('sync_filter')
+
+        self.R_z_90 = np.array([[0, -1, 0],
+                                [1,  0, 0],
+                                [0,  0, 1]])
+        
+        self.R_x_180 = np.array([[1, 0, 0],
+                                [0, -1, 0],
+                                [0,  0, -1]])
+        
+        self.R_flip = np.array([[-1, 0, 0],
+                                [0, 1, 0],
+                                [0, 0, 1]])
 
         self.sync_publisher_ = self.create_publisher(SyncMsg, '/IDD_synchronized_data', 10)
         self.last_imu_sync_ts_sec = math.nan
@@ -59,13 +72,23 @@ class SyncFilter(Node):
 
     def sync_callback_A(self, dvl_msg, imu_msg, depth_msg):
         # self.get_logger().info(f'AA')
-        self.last_imu_sync_ts_sec = imu_msg.header.stamp.sec # update most recent IMU time for valid full sync
+        self.last_imu_sync_ts_sec = imu_msg.header.stamp # update most recent IMU time for valid full sync
 
         sync_msg = SyncMsg()
         sync_msg.header.stamp = self.last_imu_sync_ts_sec
 
         sync_msg.dvl_available = Bool(data=True)
-        sync_msg.dvl_data = dvl_msg.twist
+        dvl_vector = np.array([dvl_msg.twist.linear.x, dvl_msg.twist.linear.y, dvl_msg.twist.linear.z])
+        dvl_vector = np.dot(self.R_z_90, dvl_vector)
+        dvl_vector = np.dot(self.R_x_180, dvl_vector)
+        dvl_vector = np.dot(self.R_flip, dvl_vector)
+        sync_msg.dvl_data.linear.x = dvl_vector[0]
+        sync_msg.dvl_data.linear.y = -dvl_vector[1]
+        sync_msg.dvl_data.linear.z = dvl_vector[2]
+
+        # self.get_logger().info(
+        #     f"DVL: {sync_msg.dvl_data.linear.x} {sync_msg.dvl_data.linear.y} {sync_msg.dvl_data.linear.z}"
+        # )
 
         sync_msg.imu_available = Bool(data=True)
         sync_msg.imu_data = imu_msg
@@ -84,7 +107,12 @@ class SyncFilter(Node):
             sync_msg.header.stamp = CurrTS
             
             sync_msg.dvl_available = Bool(data=True)
-            sync_msg.dvl_data = dvl_msg.twist
+            dvl_vector = np.array([dvl_msg.twist.linear.x, dvl_msg.twist.linear.y, dvl_msg.twist.linear.z])
+            dvl_vector = np.dot(self.R_z_90, dvl_vector)
+            dvl_vector = np.dot(self.R_x_180, dvl_vector)
+            sync_msg.dvl_data.linear.x = dvl_vector[0]
+            sync_msg.dvl_data.linear.y = dvl_vector[1]
+            sync_msg.dvl_data.linear.z = dvl_vector[2]
 
             sync_msg.imu_available = Bool(data=True)
             sync_msg.imu_data = imu_msg

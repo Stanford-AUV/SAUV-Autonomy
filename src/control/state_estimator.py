@@ -71,7 +71,7 @@ class StateEstimation(Node):
         # Initialization parameters in StateEstimation class
         # NOTE: orientation covariance: 0.2 deg RMS --> 1.218e-5 
         self._imu_covariance = np.array([1.218e-5, 1.218e-5, 1.218e-5, 1.35e-6, 1.35e-6, 1.35e-6])  # Adjust based on your IMU specifications
-        self._dvl_covariance = np.array([0.1, 0.1, 0.1]) 
+        self._dvl_covariance = np.array([0.000001, 0.000001, 0.000001]) 
         self._depth_covariance = np.array([7.196207822120195e-06])  # Adjust based on your depth sensor specifications
 
 
