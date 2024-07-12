@@ -1,6 +1,9 @@
 import numpy as np
 import json
 
+"""
+Robot Orientation
+"""
 
 def quadratic_model(x, a, b):
     return a * np.square(x - b)
@@ -41,7 +44,7 @@ r_is = np.array(
 
 # thruster orientations
 # note: these point in the direction of positive thrust; z axis can be changed accordingly
-# TODO confirm these numbers are correct
+# TODO confirm these numbers are correct, NED frame
 # u_is = np.array(
 #     [
 #         [0, 0, 1],
