@@ -23,6 +23,7 @@ class SyncFilter(Node):
         self.R_dvl = np.array([[0, 1, 0],
                                [1, 0, 0],
                                [0, 0, 1]])
+                               
         self.R_flip_x = np.array([[-1, 0, 0],
                                   [0, 1, 0],
                                   [0, 0, 1]])
