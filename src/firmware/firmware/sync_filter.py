@@ -23,15 +23,15 @@ class SyncFilter(Node):
         self.R_dvl = np.array([[0, 1, 0],
                                [1, 0, 0],
                                [0, 0, 1]])
-                               
         self.R_flip_x = np.array([[-1, 0, 0],
                                   [0, 1, 0],
                                   [0, 0, 1]])
 
-        # IMU Transformation: Rotate 180 degrees about the z-axis, then 180 degrees about the x-axis
-        self.R_imu = np.array([[-1, 0, 0],
-                               [0, 1, 0],
-                               [0, 0, -1]])
+        # IMU Transformation: Rotate 180 degrees about the x-axis, then 180 degrees about the y-axis, and invert y-axis
+        self.R_imu = R.from_euler('xyz', [180, 180, 0], degrees=True).as_matrix()
+        self.R_invert_y = np.array([[1, 0, 0],
+                                    [0, -1, 0],
+                                    [0, 0, 1]])
 
         self.sync_publisher_ = self.create_publisher(SyncMsg, '/IDD_synchronized_data', 10)
         self.last_imu_sync_ts_sec = math.nan
@@ -105,9 +105,10 @@ class SyncFilter(Node):
         imu_orientation = R.from_euler('xyz', [imu_msg.orientation.x, imu_msg.orientation.y, imu_msg.orientation.z])
         transformed_orientation = R.from_matrix(self.R_imu) * imu_orientation
         transformed_euler = transformed_orientation.as_euler('xyz')
-        imu_msg.orientation.x = transformed_euler[0]
-        imu_msg.orientation.y = transformed_euler[1]
-        imu_msg.orientation.z = transformed_euler[2]
+        inverted_orientation = np.dot(self.R_invert_y, transformed_euler)
+        imu_msg.orientation.x = inverted_orientation[0]
+        imu_msg.orientation.y = inverted_orientation[1]
+        imu_msg.orientation.z = inverted_orientation[2]
 
         sync_msg.imu_data = imu_msg
 
@@ -151,9 +152,10 @@ class SyncFilter(Node):
             imu_orientation = R.from_euler('xyz', [imu_msg.orientation.x, imu_msg.orientation.y, imu_msg.orientation.z])
             transformed_orientation = R.from_matrix(self.R_imu) * imu_orientation
             transformed_euler = transformed_orientation.as_euler('xyz')
-            imu_msg.orientation.x = transformed_euler[0]
-            imu_msg.orientation.y = transformed_euler[1]
-            imu_msg.orientation.z = transformed_euler[2]
+            inverted_orientation = np.dot(self.R_invert_y, transformed_euler)
+            imu_msg.orientation.x = inverted_orientation[0]
+            imu_msg.orientation.y = inverted_orientation[1]
+            imu_msg.orientation.z = inverted_orientation[2]
 
             sync_msg.imu_data = imu_msg
 
@@ -198,9 +200,10 @@ class SyncFilter(Node):
             imu_orientation = R.from_euler('xyz', [imu_msg.orientation.x, imu_msg.orientation.y, imu_msg.orientation.z])
             transformed_orientation = R.from_matrix(self.R_imu) * imu_orientation
             transformed_euler = transformed_orientation.as_euler('xyz')
-            imu_msg.orientation.x = transformed_euler[0]
-            imu_msg.orientation.y = transformed_euler[1]
-            imu_msg.orientation.z = transformed_euler[2]
+            inverted_orientation = np.dot(self.R_invert_y, transformed_euler)
+            imu_msg.orientation.x = inverted_orientation[0]
+            imu_msg.orientation.y = inverted_orientation[1]
+            imu_msg.orientation.z = inverted_orientation[2]
 
             sync_msg.imu_data = imu_msg
 
@@ -245,9 +248,10 @@ class SyncFilter(Node):
             imu_orientation = R.from_euler('xyz', [imu_msg.orientation.x, imu_msg.orientation.y, imu_msg.orientation.z])
             transformed_orientation = R.from_matrix(self.R_imu) * imu_orientation
             transformed_euler = transformed_orientation.as_euler('xyz')
-            imu_msg.orientation.x = transformed_euler[0]
-            imu_msg.orientation.y = transformed_euler[1]
-            imu_msg.orientation.z = transformed_euler[2]
+            inverted_orientation = np.dot(self.R_invert_y, transformed_euler)
+            imu_msg.orientation.x = inverted_orientation[0]
+            imu_msg.orientation.y = inverted_orientation[1]
+            imu_msg.orientation.z = inverted_orientation[2]
 
             sync_msg.imu_data = imu_msg
 
