@@ -53,12 +53,13 @@ class EKF:
                 R[:updated_R.shape[0], :updated_R.shape[1]] = updated_R
 
     def handle_imu_measurement(self, orientation, linear_acceleration, covariance, timestamp: Time):
-        # print(f"Handling IMU measurement at {timestamp}: orientation={orientation}, linear_acceleration={linear_acceleration}")
-
-        # Convert orientation to state (assume orientation is in euler angles)
+        # Update orientation state
         self.state[9:12] = orientation
-        # Convert linear acceleration to state
-        self.state[6:9] = linear_acceleration
+
+        # Convert linear acceleration to global frame
+        R = Rotation.from_euler('xyz', orientation)
+        global_accel = R.apply(linear_acceleration)
+        self.state[6:9] = global_accel
 
         # Update the IMU measurement covariance dynamically
         imu_measurement = np.hstack([orientation, linear_acceleration])
@@ -95,6 +96,11 @@ class EKF:
 
         # Update the DVL measurement covariance dynamically
         self.update_measurement_covariance(self.dvl_buffer, self.R_dvl, velocity)
+
+         # Convert DVL velocity to global frame
+        orientation = self.state[9:12]
+        R = Rotation.from_euler('xyz', orientation)
+        global_velocity = R.apply(velocity)
 
         H = np.zeros((3, 15))
         H[:, 3:6] = np.eye(3)  # Linear velocity measurement matrix
