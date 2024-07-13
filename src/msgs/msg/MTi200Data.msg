@@ -1,10 +1,10 @@
-Header header
+std_msgs/Header header
 
-time ros_time
+#time ros_time
 
-time imu_time
+sensor_msgs/TimeReference imu_time
 
-bool triggered_dvl
+#bool triggered_dvl
 
 geometry_msgs/Vector3 orientation
 

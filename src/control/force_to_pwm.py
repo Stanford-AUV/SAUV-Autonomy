@@ -1,6 +1,9 @@
 import numpy as np
 import json
 
+"""
+Robot Orientation
+"""
 
 def quadratic_model(x, a, b):
     return a * np.square(x - b)
@@ -23,22 +26,38 @@ COEFFS = {
 TAM = np.empty(shape=(6, 8))
 
 # thruster positions in body frame
-# NOTE: these are the Gazebo sim positions, to be changed later
+# Real robot axes, the axes in Gazebo are different
+# Z axis measurements: 17 in, 4.5 in (motors 1-4), 7.5 in (motors 5-8)
+# TODO: CHECK THESE NUMBERS
 r_is = np.array(
     [
-        [+0.272, +0.22, -0.14],  # thruster 1
-        [-0.272, +0.22, -0.14],  # ... 2
-        [-0.272, -0.22, -0.14],  # ... 3
-        [+0.272, -0.22, -0.14],  # ... 4
-        [+0.272, -0.22, 0],  # ... 5
-        [+0.272, +0.22, 0],  # ... 6
-        [-0.272, +0.22, 0],  # ... 7
-        [-0.272, -0.22, 0],  # ... 8
+        [+0.272, +0.22, -0.04],  # thruster 1
+        [-0.272, +0.22, -0.04],  # ... 2
+        [-0.272, -0.22, -0.04],  # ... 3
+        [+0.272, -0.22, -0.04],  # ... 4
+        [+0.272, -0.22, 0.01],  # ... 5
+        [+0.272, +0.22, 0.01],  # ... 6
+        [-0.272, +0.22, 0.01],  # ... 7
+        [-0.272, -0.22, 0.01],  # ... 8
     ]
 )
 
 # thruster orientations
 # note: these point in the direction of positive thrust; z axis can be changed accordingly
+# TODO confirm these numbers are correct, NED frame
+# u_is = np.array(
+#     [
+#         [0, 0, 1],
+#         [0, 0, -1],
+#         [0, 0, 1],
+#         [0, 0, -1],
+#         [-1, -1, 0],
+#         [1, -1, 0],
+#         [-1, -1, 0],
+#         [1, -1, 0],
+#     ]
+# )
+
 u_is = np.array(
     [
         [0, 0, 1],
@@ -46,11 +65,12 @@ u_is = np.array(
         [0, 0, 1],
         [0, 0, -1],
         [-1, -1, 0],
-        [1, -1, 0],
-        [-1, -1, 0],
-        [1, -1, 0],
+        [-1, 1, 0],
+        [-1, -1,0],
+        [-1, 1, 0],
     ]
 )
+
 u_is = u_is / np.linalg.norm(u_is, axis=1)[:, None]
 
 TAM[:3, :] = u_is.T
