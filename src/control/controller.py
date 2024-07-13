@@ -8,110 +8,133 @@ from msgs.msg import Pose, State, Wrench
 from geometry_msgs.msg import Vector3
 from simple_pid import PID
 from scipy.spatial.transform import Rotation
+from spatialmath.base import *
 
-from control.utils import pose_to_np
+from control.utils import state_to_np, same_sgn, clamp, get_axis_angle_error
 
 
 class Controller(Node):
-    def __init__(self, p_values, i_values, d_values, start_i_values):
+
+    def __init__(self, 
+                 kP,
+                 kI,
+                 kD,
+                 ff,
+                 alpha = [1, 1, 1, 1, 1, 1],
+                 max = None,
+                 start_i = None,
+                 time_fn = None,
+    ):
         """
-        Initialize Controller object with PID parameters for position and
-        orientation.
+        Initialize Controller object
 
-        :param p_values: Diagonal matrix of P gains for the controller
-            [pX, pY, pZ, pRoll, pPitch, pYaw].
-        :param i_values: Diagonal matrix of I gains for the controller
-            [iX, iY, iZ, iRoll, iPitch, iYaw].
-        :param d_values: Diagonal matrix of D gains for the controller
-            [dX, dY, dZ, dRoll, dPitch, dYaw].
-        :param start_i_values: Diagonal matrix of values to start integral for the
-            controller [startX, startY, startZ, startRoll, startPitch, startYaw].
+        :param kP: 6-vector of P gains for the controller.
+        :param kI: 6-vector of I gains for the controller.
+        :param kD: 6-vector of D gains for the controller.
+        :param ff: 6-vector of feed forward terms for the controller.
+        :param alpha: 6-vector of weights for the derivative term in the integral calculation, or None by default.
+        :param max: 6-vector of max force or torque allowed in each coordinate, or the 1 vector by default.
+        :param start_i: 6-vector representing what error to begin accumulating the integral term.
+        :param time_fn: Function to keep track of time between state updates, or None by default.
         """
-        super().__init__("controller")
+        # Gains for translational PID
+        self.kP_trans = np.diag(kP[:3])
+        self.kI_trans = np.diag(kI[:3])
+        self.kD_trans = np.diag(kD[:3])
+        self.ff_trans = ff[:3]
+        
+        # Gains for rotational PID
+        self.kP_rot = np.diag(kP[3:])
+        self.kI_rot = np.diag(kI[3:])
+        self.kD_rot = np.diag(kD[3:])
+        self.ff_rot = ff[3:]
 
-        self.start_I_ = start_i_values
+        self.start_i = start_i
 
-        self.pids = [
-            PID(
-                p,
-                i,
-                d,
-                setpoint=0,
-                sample_time=None,
-                time_fn=lambda: self.get_clock().now().nanoseconds / 1e9,
-            )
-            for p, i, d in zip(p_values, i_values, d_values)
-        ]
+        self.dim = len(self.kP)
 
-        self.dim_ = 6  # 6 DOF
+        self.current = np.zeros(self.dim)
+        self.desired = np.zeros(self.dim)
+        self.integral = np.zeros(self.dim)
+        self.max = max
 
-        # Initialize mutables; everything is 0 at t_0
-        self.desired = np.zeros(self.dim_)
-        self.pose = np.zeros(self.dim_)
-
+        self.time_fn = time_fn
         self.last_time = self.get_clock().now()
 
-        # Initialize current state subscriber
-        self.state_subscription_ = self.create_subscription(
-            State, "state", self.state_callback, 10
-        )
+        self.state_subscription_ = self.create_subscription(State, "state", self.state_callback, 10)
+        
+        self.desired_subscription_ = self.create_subscription(Pose, "desired_pose", self.desired_callback, 10)
 
-        # Initialize desired state subscriber
-        self.desired_subscription_ = self.create_subscription(
-            Pose, "desired_pose", self.desired_callback, 10
-        )
-
-        # Initialize force/torque output publisher
         self.output_publisher_ = self.create_publisher(Wrench, "desired_wrench", 10)
 
-        # Services
         self.reset_service = self.create_service(Empty, "reset_controller", self.reset)
 
-        # Create mutex to prevent race conditions
         self.lock = threading.Lock()
 
     def state_callback(self, msg: State):
-        """Get our current pose from a topic."""
+        """
+        Get our current state from a topic.
+        """
         with self.lock:
-            self.pose = np.array(pose_to_np(msg))
-            # self.get_logger().info("Received pose: %s" % self.pose)
+            self.current = state_to_np(msg)
             timestamp = Time(
-                seconds=msg.header.stamp.sec,
-                nanoseconds=msg.header.stamp.nanosec,
-                clock_type=self.get_clock().clock_type,
+                seconds = msg.header.stamp.sec,
+                nanoseconds = msg.header.stamp.nanosec,
+                clock_type = self.get_clock().clock_type
             )
             self.dt = (timestamp - self.last_time).nanoseconds
             self.last_time = timestamp
             self.update()
 
-    def desired_callback(self, msg: Pose):
-        """Get the desired pose from a topic."""
+    def desired_callback(self, msg: State):
+        """
+        Get the desired state from a topic.
+        """
         with self.lock:
-            self.desired = np.array(pose_to_np(msg))
-            for i, pid in enumerate(self.pids):
-                pid.setpoint = self.desired[i]
-            # self.get_logger().info("Received desired pose: %s" % self.desired)
+            self.desired = state_to_np(msg)
 
     def update(self):
-        """Update the controller with the current state and publish to a topic"""
-        # Wrench in global frame
-        global_wrench = np.array([pid(self.pose[i]) for i, pid in enumerate(self.pids)])
+        """
+        Update the controller with the current state and publish to a topic.
+        """
+        # current state
+        r_W = self.current[0:3]     # position, world-frame
+        q_WB = self.current[3:7]    # orientation, world-frame
+        q_BW = qconj(q_WB)   
+        v_W = self.current[7:10]    # velocity, world-frame
+        w_B = self.current[10:13]   # angular velocity, body-frame
 
-        # Convert wrench to local frame
-        current_orientation = self.pose[3:]
-        rotation_matrix = Rotation.from_euler("xyz", -current_orientation).as_matrix()
-        local_wrench = np.concatenate(
-            [rotation_matrix @ global_wrench[:3], rotation_matrix @ -global_wrench[3:]]
-        )
+        # desired state
+        r_W_des = self.desired[0:3]     # position, world-frame
+        q_WB_des = self.desired[3:7]    # orientation, world-frame
+        q_BW_des = qconj(q_WB_des)
+        v_W_des = self.desired[7:10]    # velocity, world-frame
+        w_B_des = self.desired[10:13]   # angular velocity, body-frame
 
-        np.set_printoptions(precision=2, suppress=True)
-        self.get_logger().info(f"Local wrench: {local_wrench}")
+        # error terms
+        pos_error = r_W_des - r_W                          # position
+        des_phi_b = get_axis_angle_error(q_WB, q_WB_des)   # attitude
 
-        # Cap the wrench to prevent thrust from exceeding limits
-        wrench = np.clip(local_wrench, -1, 1)
-        for i in range(3, 6):
-            if abs(wrench[i]) < 0.001:
-                wrench[i] = 0
+        # derivative terms 
+        d_v_W = v_W_des - v_W   # velocity
+        d_w_B = w_B_des - w_B   # angular velocity
+
+        # integral terms
+        for i in range(len(self.integral)):
+            if i < 3 and pos_error[i] < self.start_i[i]:
+                self.integral[i] += self.dt * (pos_error[i] + self.alpha[i] * d_v_W[i])
+            elif des_phi_b[i] < self.start_i[i]:
+                self.integral[i] += self.dt * (des_phi_b[i-3] + self.alpha[i] * d_w_B[i-3])
+            clamp(self.integral[i], [self.integral[i], self.max[i]])
+        
+        # force on the body (in the body frame)
+        force_W = self.kP_trans @ pos_error + self.kD_trans @ d_v_W + self.kI_trans @ self.integral[:3] + self.ff_trans
+        force_B = qvmul(q_BW, force_W)
+
+        # torque on the body (in the body frame)
+        tau_B = self.kP_rot @ des_phi_b + self.kD_rot @ d_w_B + self.kI_rot @ self.integral[3:] + self.ff_rot
+
+        wrench = np.hstack((force_B, tau_B))
 
         # Publish a list of control outputs:
         # [force_x, force_y, force_z, torque_roll, torque_pitch, torque_yaw]
@@ -121,7 +144,6 @@ class Controller(Node):
         )
 
         self.output_publisher_.publish(msg)
-        # self.get_logger().info(f"Publishing wrench: {wrench}")
 
     def reset(self):
         """
@@ -129,9 +151,9 @@ class Controller(Node):
         """
         self.get_logger().info("Resetting controler settings.")
         with self.lock:
-            for pid, start_i in zip(self.pids, self.start_I_):
-                pid.reset()
-                pid.set_auto_mode(True, last_output=start_i)
+            self.current = np.zeros(self.dim)
+            self.desired = np.zeros(self.dim)
+            self.integral = np.zeros(self.dim)
 
 
 # 0.01 -> 20.02
