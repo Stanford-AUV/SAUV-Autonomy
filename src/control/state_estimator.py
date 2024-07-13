@@ -19,6 +19,7 @@ from geometry_msgs.msg import Vector3
 
 from msgs.msg import SensorSync, MTi200Data
 from geometry_msgs.msg import Twist
+from geometry_msgs.msg import PoseStamped
 from std_msgs.msg import Bool
 
 from .ekf import EKF
@@ -75,6 +76,8 @@ class StateEstimation(Node):
         qos_profile = QoSProfile(depth=10)
 
         self._state_pub = self.create_publisher(StateMsg, "state", qos_profile)
+        self._pose_pub = self.create_publisher(PoseStamped, "visualizable_state", qos_profile)
+        
 
         self._sensor_sync_sub = self.create_subscription(
             SensorSync, "/IDD_synchronized_data", self._receive_msg, qos_profile
@@ -215,6 +218,10 @@ class StateEstimation(Node):
             imu_data.free_acceleration.z
         ])
 
+        self.get_logger().info(
+            f"IMU ACC: {linear_acceleration[0]:.2f} {linear_acceleration[1]:.2f} {linear_acceleration[2]:.2f}"
+        )
+
         covariance = self._imu_covariance
 
         # self.get_logger().info(f"IMU data: orientation={orientation}, linear_acceleration={linear_acceleration}")
@@ -233,6 +240,9 @@ class StateEstimation(Node):
             dvl_data.linear.y,
             dvl_data.linear.z
         ])
+        self.get_logger().info(
+            f"DVL VEL: {velocity[0]:.2f} {velocity[1]:.2f} {velocity[2]:.2f}"
+        )
         covariance = self._dvl_covariance
 
         # self.get_logger().info(f"DVL data: velocity={velocity}")
@@ -286,6 +296,19 @@ class StateEstimation(Node):
 
         # Publish state message
         self._state_pub.publish(state_msg)
+
+        pose_msg = PoseStamped()
+        pose_msg.header.stamp = time.to_msg()
+        pose_msg.header.frame_id = 'map'  # Adjust as necessary
+        pose_msg.pose.position.x = position[0]
+        pose_msg.pose.position.y = position[1]
+        pose_msg.pose.position.z = position[2]
+        pose_msg.pose.orientation.x = quaternion[0]
+        pose_msg.pose.orientation.y = quaternion[1]
+        pose_msg.pose.orientation.z = quaternion[2]
+        pose_msg.pose.orientation.w = quaternion[3]
+
+        self._pose_pub.publish(pose_msg)
 
         self.get_logger().info(
             f"Estimated position: {state_msg.position.x:.2f} {state_msg.position.y:.2f} {state_msg.position.z:.2f}"
