@@ -74,7 +74,7 @@ class Controller(Node):
         """Get our current pose from a topic."""
         with self.lock:
             self.pose = np.array(pose_to_np(msg))
-            # self.get_logger().info("Received pose: %s" % self.pose)
+            self.get_logger().info("Received pose: %s" % self.pose)
             timestamp = Time(
                 seconds=msg.header.stamp.sec,
                 nanoseconds=msg.header.stamp.nanosec,
@@ -152,7 +152,8 @@ def main(args=None):
     #                      x, y, z, r, p, y
     kP = np.array([0.1, 0.1, 0.1, 0.05, 0.05, 0.05])
     kD = np.array([0, 0, 0, 0, 0, 0])
-    kI = np.array([1.2, 1.2, 1.2, 0.75, 0.75, 0.75])
+    kI = np.array([0, 0, 0, 0, 0, 0])
+    # kI = np.array([1.2, 1.2, 1.2, 0.75, 0.75, 0.75])
     start_I = np.array([0, 0, 0, 0, 0, 0])
 
     controller_node = Controller(kP, kD, kI, start_I)
@@ -164,7 +165,6 @@ def main(args=None):
 
     # Cleanup
     controller_node.destroy_node()
-
     rclpy.shutdown()
 
 
