@@ -29,16 +29,32 @@ TAM = np.empty(shape=(6, 8))
 # Real robot axes, the axes in Gazebo are different
 # Z axis measurements: 17 in, 4.5 in (motors 1-4), 7.5 in (motors 5-8)
 # TODO: CHECK THESE NUMBERS
+
+"""
 r_is = np.array(
     [
-        [+0.272, +0.22, -0.04],  # thruster 1
-        [-0.272, +0.22, -0.04],  # ... 2
-        [-0.272, -0.22, -0.04],  # ... 3
-        [+0.272, -0.22, -0.04],  # ... 4
-        [+0.272, -0.22, 0.01],  # ... 5
-        [+0.272, +0.22, 0.01],  # ... 6
-        [-0.272, +0.22, 0.01],  # ... 7
-        [-0.272, -0.22, 0.01],  # ... 8
+        [+0.272, +0.22, -0.04],  # ... pin 2 bottom, lower right
+        [-0.272, +0.22, -0.04],  # ... pin 3 bottom, upper right
+        [-0.272, -0.22, -0.04],  # ... pin 4 bottom, upper left 
+        [+0.272, -0.22, -0.04],  # ... pin 5 bottom, lower left
+        [+0.272, -0.22, 0.01],  # ... pin 6 top, lower left
+        [+0.272, +0.22, 0.01],  # ... pin 7 top, lower right
+        [-0.272, +0.22, 0.01],  # ... pin 8 top, upper right
+        [-0.272, -0.22, 0.01],  # ... pin 9, top, upper left
+    ]
+)
+"""
+
+r_is = np.array(
+    [
+        [-0.272, +0.22, -0.04],  # ... pin 2 bottom, lower right
+        [+0.272, +0.22, -0.04],  # ... pin 3 bottom, upper right
+        [+0.272, -0.22, -0.04],  # ... pin 4 bottom, upper left
+        [-0.272, -0.22, -0.04],  # ... pin 5 bottom, lower left
+        [-0.272, -0.22, 0.01],  # ... pin 6 top, lower left
+        [-0.272, +0.22, 0.01],  # ... pin 7 top, lower right
+        [+0.272, +0.22, 0.01],  # ... pin 8 top, upper right
+        [+0.272, -0.22, 0.01],  # ... pin 9, top, upper left
     ]
 )
 
@@ -60,14 +76,14 @@ r_is = np.array(
 
 u_is = np.array(
     [
-        [0, 0, 1],
         [0, 0, -1],
-        [0, 0, 1],
         [0, 0, -1],
+        [0, 0, -1],
+        [0, 0, 1], # pin 5, weak. perhaps faulty. check cables?
+        [-1, 1, 0],
         [-1, -1, 0],
-        [-1, 1, 0],
-        [-1, -1,0],
-        [-1, 1, 0],
+        [-1, 1,0],
+        [-1, -1, 0],
     ]
 )
 
