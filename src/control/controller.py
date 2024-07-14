@@ -7,7 +7,8 @@ import threading
 from msgs.msg import Pose, State, Wrench
 from geometry_msgs.msg import Vector3
 from simple_pid import PID
-from scipy.spatial.transform import Rotation
+from scipy.spatial.transform import Rotation as R
+from guidance.trapezoidal_motion_profile import TrapezoidalMotionProfile
 
 from control.utils import pose_to_np
 
@@ -58,7 +59,7 @@ class Controller(Node):
 
         # Initialize desired state subscriber
         self.desired_subscription_ = self.create_subscription(
-            Pose, "desired_pose", self.desired_callback, 10
+            Pose, "desired_pose", self.desired_pose_callback, 10
         )
 
         # Initialize force/torque output publisher
@@ -70,11 +71,15 @@ class Controller(Node):
         # Create mutex to prevent race conditions
         self.lock = threading.Lock()
 
+        # Motion profiles
+        self.motion_profiles = [None] * self.dim_
+        self.profile_start_time = None
+
     def state_callback(self, msg: State):
         """Get our current pose from a topic."""
         with self.lock:
             self.pose = np.array(pose_to_np(msg))
-            # self.get_logger().info("Received pose: %s" % self.pose)
+            self.get_logger().info("Received pose: %s" % self.pose)
             timestamp = Time(
                 seconds=msg.header.stamp.sec,
                 nanoseconds=msg.header.stamp.nanosec,
@@ -84,22 +89,43 @@ class Controller(Node):
             self.last_time = timestamp
             self.update()
 
-    def desired_callback(self, msg: Pose):
+    def desired_pose_callback(self, msg: Pose):
         """Get the desired pose from a topic."""
         with self.lock:
-            self.desired = np.array(pose_to_np(msg))
-            for i, pid in enumerate(self.pids):
-                pid.setpoint = self.desired[i]
-            # self.get_logger().info("Received desired pose: %s" % self.desired)
+            desired_position = np.array(pose_to_np(msg))
+
+            self.profile_start_time = self.get_clock().now().nanoseconds / 1e9
+
+            max_vel = 1.0
+            max_acc = 0.5
+            dt = 0.1
+
+            self.motion_profiles = [
+                TrapezoidalMotionProfile(self.pose[i], desired_position[i], max_vel, max_acc, dt)
+                for i in range(self.dim_)
+            ]
 
     def update(self):
         """Update the controller with the current state and publish to a topic"""
+
+        current_time = self.get_clock().now().nanoseconds / 1e9
+
+        if self.profile_start_time is not None:
+
+            elapsed_time = current_time - self.profile_start_time
+
+            for i in range(self.dim_):
+
+                if self.motion_profiles[i] is not None:
+
+                    self.pids[i].setpoint = self.motion_profiles[i].get_desired_position(elapsed_time)
+
         # Wrench in global frame
         global_wrench = np.array([pid(self.pose[i]) for i, pid in enumerate(self.pids)])
 
         # Convert wrench to local frame
         current_orientation = self.pose[3:]
-        rotation_matrix = Rotation.from_euler("xyz", -current_orientation).as_matrix()
+        rotation_matrix = R.from_euler("xyz", -current_orientation).as_matrix()
         local_wrench = np.concatenate(
             [rotation_matrix @ global_wrench[:3], rotation_matrix @ -global_wrench[3:]]
         )
@@ -127,23 +153,11 @@ class Controller(Node):
         """
         Reset the controller settings.
         """
-        self.get_logger().info("Resetting controler settings.")
+        self.get_logger().info("Resetting controller settings.")
         with self.lock:
             for pid, start_i in zip(self.pids, self.start_I_):
                 pid.reset()
                 pid.set_auto_mode(True, last_output=start_i)
-
-
-# 0.01 -> 20.02
-# 0.05 -> 20.04
-# 0.1 -> 20.08
-# 1 -> 20.11
-
-# 0.1, 0.1 -> 15.09
-# 0.1, 1 -> 15.07
-# 0.1, 1000 -> 15.05
-# 0.1, 1000000 ->
-
 
 def main(args=None):
     rclpy.init(args=args)
@@ -152,7 +166,8 @@ def main(args=None):
     #                      x, y, z, r, p, y
     kP = np.array([0.1, 0.1, 0.1, 0.05, 0.05, 0.05])
     kD = np.array([0, 0, 0, 0, 0, 0])
-    kI = np.array([1.2, 1.2, 1.2, 0.75, 0.75, 0.75])
+    kI = np.array([0, 0, 0, 0, 0, 0])
+    # kI = np.array([1.2, 1.2, 1.2, 0.75, 0.75, 0.75])
     start_I = np.array([0, 0, 0, 0, 0, 0])
 
     controller_node = Controller(kP, kD, kI, start_I)
@@ -164,7 +179,6 @@ def main(args=None):
 
     # Cleanup
     controller_node.destroy_node()
-
     rclpy.shutdown()
 
 
