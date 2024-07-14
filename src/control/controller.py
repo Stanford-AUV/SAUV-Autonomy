@@ -8,7 +8,7 @@ from msgs.msg import Pose, State, Wrench
 from geometry_msgs.msg import Vector3
 from simple_pid import PID
 from scipy.spatial.transform import Rotation as R
-from guidance.trapzeoidal_motion_profile import TrapezoidalMotionProfile
+from guidance.trapezoidal_motion_profile import TrapezoidalMotionProfile
 
 from control.utils import pose_to_np
 
