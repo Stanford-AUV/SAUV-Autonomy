@@ -149,6 +149,7 @@ class DvlPublisher : public rclcpp::Node
 
             geometry_msgs::msg::TwistStamped velMessage; // NOTE: not sure what the order or meaning of the four means are!
             velMessage.header.stamp = this->now();
+            velMessage.header.frame_id = "dvl_link";  // Set the frame_id to match your DVL's frame
             velMessage.twist.linear.x = velArray[0];
             velMessage.twist.linear.y = velArray[1];
             velMessage.twist.linear.z = velArray[2];
