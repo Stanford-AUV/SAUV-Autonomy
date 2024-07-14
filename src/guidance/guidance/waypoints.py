@@ -43,7 +43,7 @@ class CheckpointManager(Node):
         )
         # msg.data = pwm
         self._desired_pose_pub.publish(msg)
-        self.get_logger().info(f"Published desired pose: {msg.position}, {msg.orientation}")
+        self.get_logger().info(f"Published desired pose: [{msg.position.x}, {msg.position.y}, {msg.position.z}, {msg.orientation.x}, {msg.orientation.y}, {msg.orientation.z}]")
 
     def current_state_callback(self, msg: State):
         current_pose = np.array(
