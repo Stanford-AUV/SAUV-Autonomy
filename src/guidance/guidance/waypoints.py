@@ -15,7 +15,7 @@ class CheckpointManager(Node):
         super().__init__("waypoints")
 
         waypoints = [[0, 0, 0, 0, 0, 0]]
-        self._checkpoints = np.array(waypoints)
+        self._checkpoints = np.array(waypoints, dtype=np.float64)
         self._checkpoints_index = 0
         self._desired_pose = self._checkpoints[self._checkpoints_index]
 
