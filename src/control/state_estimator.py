@@ -218,9 +218,9 @@ class StateEstimation(Node):
             imu_data.free_acceleration.z
         ])
 
-        self.get_logger().info(
-            f"IMU ACC: {linear_acceleration[0]:.2f} {linear_acceleration[1]:.2f} {linear_acceleration[2]:.2f}"
-        )
+        # self.get_logger().info(
+        #     f"IMU ACC: {linear_acceleration[0]:.2f} {linear_acceleration[1]:.2f} {linear_acceleration[2]:.2f}"
+        # )
 
         covariance = self._imu_covariance
 
@@ -240,9 +240,9 @@ class StateEstimation(Node):
             dvl_data.linear.y,
             dvl_data.linear.z
         ])
-        self.get_logger().info(
-            f"DVL VEL: {velocity[0]:.2f} {velocity[1]:.2f} {velocity[2]:.2f}"
-        )
+        # self.get_logger().info(
+        #     f"DVL VEL: {velocity[0]:.2f} {velocity[1]:.2f} {velocity[2]:.2f}"
+        # )
         covariance = self._dvl_covariance
 
         # self.get_logger().info(f"DVL data: velocity={velocity}")
@@ -278,16 +278,17 @@ class StateEstimation(Node):
         state_msg.linear_velocity = Vector3(x=velocity[0], y=velocity[1], z=velocity[2])
         state_msg.linear_acceleration = Vector3(x=acceleration[0], y=acceleration[1], z=acceleration[2])
 
-        state_msg.orientation_euler = Vector3(x=orientation[0], y=orientation[1], z=orientation[2])
+        state_msg.orientation_euler = Vector3(x=-orientation[0], y=-orientation[1], z=-orientation[2])
 
         # Convert orientation (Euler angles) to quaternion
         quaternion = Rotation.from_euler('xyz', orientation).as_quat()
-        state_msg.orientation.x = quaternion[0]
-        state_msg.orientation.y = quaternion[1]
-        state_msg.orientation.z = quaternion[2]
+        state_msg.orientation.x = -quaternion[0]
+        state_msg.orientation.y = -quaternion[1]
+        state_msg.orientation.z = -quaternion[2]
         state_msg.orientation.w = quaternion[3]
 
         # Convert angular velocity to quaternion representation
+        # CURRENTLY NOT PUBLISHED!!!! MAY NEED TO BE UPDATED TO REFLECT ANGLE REFLECTION SEE ABOVE ^^
         angular_velocity_quat = Rotation.from_euler('xyz', angular_velocity).as_quat()
         state_msg.angular_velocity.x = angular_velocity_quat[0]
         state_msg.angular_velocity.y = angular_velocity_quat[1]
