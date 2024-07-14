@@ -274,7 +274,7 @@ class StateEstimation(Node):
         state_msg.header.stamp = time.to_msg()
 
         # Convert numpy arrays to ROS messages
-        state_msg.position = Vector3(x=position[0], y=position[1], z=position[2])
+        state_msg.position = Vector3(x=-position[0], y=position[1], z=position[2])
         state_msg.linear_velocity = Vector3(x=velocity[0], y=velocity[1], z=velocity[2])
         state_msg.linear_acceleration = Vector3(x=acceleration[0], y=acceleration[1], z=acceleration[2])
 
@@ -300,7 +300,7 @@ class StateEstimation(Node):
         pose_msg = PoseStamped()
         pose_msg.header.stamp = time.to_msg()
         pose_msg.header.frame_id = 'map'  # Adjust as necessary
-        pose_msg.pose.position.x = position[0]
+        pose_msg.pose.position.x = -position[0]
         pose_msg.pose.position.y = position[1]
         pose_msg.pose.position.z = position[2]
         pose_msg.pose.orientation.x = quaternion[0]
