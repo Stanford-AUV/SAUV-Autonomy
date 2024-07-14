@@ -14,8 +14,8 @@ class CheckpointManager(Node):
     def __init__(self):
         super().__init__("waypoints")
 
-        with open("data/waypoints.json") as f:
-            self._checkpoints = np.array(json.load(f))
+        waypoints = [[0, 0, 0, 0, 0, 0]]
+        self._checkpoints = np.array(waypoints)
         self._checkpoints_index = 0
         self._desired_pose = self._checkpoints[self._checkpoints_index]
 
@@ -24,7 +24,7 @@ class CheckpointManager(Node):
         )
         self._desired_pose_pub = self.create_publisher(Pose, "desired_pose", 10)
 
-        timer_period = 0.5  # TODO: Don't hardcode this
+        timer_period = 0.1  # TODO: Don't hardcode this
         self.timer = self.create_timer(timer_period, self.timer_callback)
 
     def timer_callback(self):
