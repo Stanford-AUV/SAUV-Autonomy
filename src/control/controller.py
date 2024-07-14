@@ -58,7 +58,7 @@ class Controller(Node):
 
         # Initialize desired state subscriber
         self.desired_subscription_ = self.create_subscription(
-            Pose, "desired_pose", self.desired_callback, 10
+            Pose, "desired_pose", self.desired_pose_callback, 10
         )
 
         # Initialize force/torque output publisher
@@ -84,13 +84,13 @@ class Controller(Node):
             self.last_time = timestamp
             self.update()
 
-    def desired_callback(self, msg: Pose):
+    def desired_pose_callback(self, msg: Pose):
         """Get the desired pose from a topic."""
         with self.lock:
             self.desired = np.array(pose_to_np(msg))
             for i, pid in enumerate(self.pids):
                 pid.setpoint = self.desired[i]
-            # self.get_logger().info("Received desired pose: %s" % self.desired)
+            self.get_logger().info("Received desired pose: %s" % self.desired)
 
     def update(self):
         """Update the controller with the current state and publish to a topic"""
