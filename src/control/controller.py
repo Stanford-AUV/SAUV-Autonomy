@@ -9,8 +9,9 @@ from geometry_msgs.msg import Vector3
 from simple_pid import PID
 from scipy.spatial.transform import Rotation as R
 from guidance.trapezoidal_motion_profile import TrapezoidalMotionProfile
+import json
 
-from control.utils import pose_to_np
+from control.utils import pose_to_np, state_to_np
 
 
 class Controller(Node):
@@ -78,8 +79,8 @@ class Controller(Node):
     def state_callback(self, msg: State):
         """Get our current pose from a topic."""
         with self.lock:
-            self.pose = np.array(pose_to_np(msg))
-            self.get_logger().info("Received pose: %s" % self.pose)
+            self.pose = np.array(state_to_np(msg))
+            self.get_logger().info("Current state: %s" % self.pose)
             timestamp = Time(
                 seconds=msg.header.stamp.sec,
                 nanoseconds=msg.header.stamp.nanosec,
@@ -92,24 +93,29 @@ class Controller(Node):
     def desired_pose_callback(self, msg: Pose):
         """Get the desired pose from a topic."""
         with self.lock:
-            desired_position = np.array(pose_to_np(msg))
+            self.desired = np.array(pose_to_np(msg))
 
             self.profile_start_time = self.get_clock().now().nanoseconds / 1e9
 
             max_vel = 1.0
             max_acc = 0.5
             dt = 0.1
+            
+            # self.get_logger().info("Desired pose: %s" % self.desired)
 
+            """
             self.motion_profiles = [
-                TrapezoidalMotionProfile(self.pose[i], desired_position[i], max_vel, max_acc, dt)
+                TrapezoidalMotionProfile(self.pose[i], self.desired[i], max_vel, max_acc, dt)
                 for i in range(self.dim_)
             ]
+            """
 
     def update(self):
         """Update the controller with the current state and publish to a topic"""
 
         current_time = self.get_clock().now().nanoseconds / 1e9
 
+        """
         if self.profile_start_time is not None:
 
             elapsed_time = current_time - self.profile_start_time
@@ -119,6 +125,9 @@ class Controller(Node):
                 if self.motion_profiles[i] is not None:
 
                     self.pids[i].setpoint = self.motion_profiles[i].get_desired_position(elapsed_time)
+        """
+        for i in range(self.dim_):
+            self.pids[i].setpoint = self.desired[i]
 
         # Wrench in global frame
         global_wrench = np.array([pid(self.pose[i]) for i, pid in enumerate(self.pids)])
@@ -131,7 +140,7 @@ class Controller(Node):
         )
 
         np.set_printoptions(precision=2, suppress=True)
-        self.get_logger().info(f"Local wrench: {local_wrench}")
+        # self.get_logger().info(f"Local wrench: {local_wrench}")
 
         # Cap the wrench to prevent thrust from exceeding limits
         wrench = np.clip(local_wrench, -1, 1)
@@ -141,6 +150,7 @@ class Controller(Node):
 
         # Publish a list of control outputs:
         # [force_x, force_y, force_z, torque_roll, torque_pitch, torque_yaw]
+        wrench *= -1
         msg = Wrench(
             force=Vector3(x=wrench[0], y=wrench[1], z=wrench[2]),
             torque=Vector3(x=wrench[3], y=wrench[4], z=wrench[5]),
@@ -164,9 +174,8 @@ def main(args=None):
 
     # Initialize controller gains
     #                      x, y, z, r, p, y
-    import json
 
-    with open('data/pid_gains.json', 'r') as f:
+    with open('/home/selenas/SAUV/SAUV-Autonomy/src/control/data/pid_gains.json', 'r') as f:
         pid_gains = json.load(f)
 
     kP = np.array(pid_gains['kP'])
