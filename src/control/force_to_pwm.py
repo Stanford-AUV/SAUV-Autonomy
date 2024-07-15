@@ -27,34 +27,27 @@ TAM = np.empty(shape=(6, 8))
 
 # thruster positions in body frame
 # Real robot axes, the axes in Gazebo are different
-# Z axis measurements: 17 in, 4.5 in (motors 1-4), 7.5 in (motors 5-8)
-# TODO: CHECK THESE NUMBERS
 
 """
-r_is = np.array(
-    [
-        [+0.272, +0.22, -0.04],  # ... pin 2 bottom, lower right
-        [-0.272, +0.22, -0.04],  # ... pin 3 bottom, upper right
-        [-0.272, -0.22, -0.04],  # ... pin 4 bottom, upper left 
-        [+0.272, -0.22, -0.04],  # ... pin 5 bottom, lower left
-        [+0.272, -0.22, 0.01],  # ... pin 6 top, lower left
-        [+0.272, +0.22, 0.01],  # ... pin 7 top, lower right
-        [-0.272, +0.22, 0.01],  # ... pin 8 top, upper right
-        [-0.272, -0.22, 0.01],  # ... pin 9, top, upper left
-    ]
-)
+Frame measurements:
+x length: 0.56m. Motors on frame
+y length: 0.30m, Add/subtract 0.076m to get motor positions
+z length: 0.43m. Motors 0.09m and 0.254m off the ground
+
+Motor positions are meant to be relative to CG
+For ease of measurement we assume CG is at the center of the frame
 """
 
 r_is = np.array(
     [
-        [-0.272, +0.22, -0.04],  # ... pin 2 bottom, lower right
-        [+0.272, +0.22, -0.04],  # ... pin 3 bottom, upper right
-        [+0.272, -0.22, -0.04],  # ... pin 4 bottom, upper left
-        [-0.272, -0.22, -0.04],  # ... pin 5 bottom, lower left
-        [-0.272, -0.22, 0.01],  # ... pin 6 top, lower left
-        [-0.272, +0.22, 0.01],  # ... pin 7 top, lower right
-        [+0.272, +0.22, 0.01],  # ... pin 8 top, upper right
-        [+0.272, -0.22, 0.01],  # ... pin 9, top, upper left
+        [-0.272, +0.22, -0.125],  # ... pin 2 bottom, lower right
+        [+0.272, +0.22, -0.125],  # ... pin 3 bottom, upper right
+        [+0.272, -0.22, -0.125],  # ... pin 4 bottom, upper left
+        [-0.272, -0.22, -0.125],  # ... pin 5 bottom, lower left
+        [-0.272, -0.22, 0.04],  # ... pin 6 top, lower left
+        [-0.272, +0.22, 0.04],  # ... pin 7 top, lower right
+        [+0.272, +0.22, 0.04],  # ... pin 8 top, upper right
+        [+0.272, -0.22, 0.04],  # ... pin 9, top, upper left
     ]
 )
 
