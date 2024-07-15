@@ -14,7 +14,9 @@ class CheckpointManager(Node):
     def __init__(self):
         super().__init__("waypoints")
 
-        waypoints = [[0, 0, 0, 0, 0, 0]]
+        # waypoints = [[0, 0, 0, 0, 0, 0]]
+        with open('data/waypoints.json', 'r') as f:
+            waypoints = json.load(f)
         self._checkpoints = np.array(waypoints, dtype=np.float64)
         self._checkpoints_index = 0
         self._desired_pose = self._checkpoints[self._checkpoints_index]

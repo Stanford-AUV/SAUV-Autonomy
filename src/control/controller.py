@@ -164,11 +164,20 @@ def main(args=None):
 
     # Initialize controller gains
     #                      x, y, z, r, p, y
-    kP = np.array([0.1, 0.1, 0.1, 0.05, 0.05, 0.05])
-    kD = np.array([0, 0, 0, 0, 0, 0])
-    kI = np.array([0, 0, 0, 0, 0, 0])
-    # kI = np.array([1.2, 1.2, 1.2, 0.75, 0.75, 0.75])
-    start_I = np.array([0, 0, 0, 0, 0, 0])
+    import json
+
+    with open('data/pid_gains.json', 'r') as f:
+        pid_gains = json.load(f)
+
+    kP = np.array(pid_gains['kP'])
+    kD = np.array(pid_gains['kD'])
+    kI = np.array(pid_gains['kI'])
+    start_I = np.array(pid_gains['start_I'])
+    # kP = np.array([0.1, 0.1, 0.1, 0.05, 0.05, 0.05])
+    # kD = np.array([0, 0, 0, 0, 0, 0])
+    # kI = np.array([0, 0, 0, 0, 0, 0])
+    # # kI = np.array([1.2, 1.2, 1.2, 0.75, 0.75, 0.75])
+    # start_I = np.array([0, 0, 0, 0, 0, 0])
 
     controller_node = Controller(kP, kD, kI, start_I)
 
