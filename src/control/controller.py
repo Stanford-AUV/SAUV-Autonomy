@@ -9,6 +9,7 @@ from geometry_msgs.msg import Vector3
 from simple_pid import PID
 from scipy.spatial.transform import Rotation as R
 from guidance.trapezoidal_motion_profile import TrapezoidalMotionProfile
+import json
 
 from control.utils import pose_to_np
 
@@ -162,10 +163,6 @@ class Controller(Node):
 def main(args=None):
     rclpy.init(args=args)
 
-    # Initialize controller gains
-    #                      x, y, z, r, p, y
-    import json
-
     with open('data/pid_gains.json', 'r') as f:
         pid_gains = json.load(f)
 
@@ -173,11 +170,6 @@ def main(args=None):
     kD = np.array(pid_gains['kD'])
     kI = np.array(pid_gains['kI'])
     start_I = np.array(pid_gains['start_I'])
-    # kP = np.array([0.1, 0.1, 0.1, 0.05, 0.05, 0.05])
-    # kD = np.array([0, 0, 0, 0, 0, 0])
-    # kI = np.array([0, 0, 0, 0, 0, 0])
-    # # kI = np.array([1.2, 1.2, 1.2, 0.75, 0.75, 0.75])
-    # start_I = np.array([0, 0, 0, 0, 0, 0])
 
     controller_node = Controller(kP, kD, kI, start_I)
 
