@@ -33,10 +33,9 @@ class Arduino(Node):
 
         pwm_value = msg.data
         command = f'{thruster_number} {pwm_value}\n'
-        # command = f'8 1600\n9 1600'
         try:
             self.portName.write(command.encode())
-            self.get_logger().info(f'Sent to thruster {thruster_number}: {pwm_value} pwm')
+            # self.get_logger().info(f'Sent to thruster {thruster_number}: {pwm_value} pwm')
         except serial.SerialException as e:
             self.get_logger().error(f'Failed to write to serial port: {e}')
 

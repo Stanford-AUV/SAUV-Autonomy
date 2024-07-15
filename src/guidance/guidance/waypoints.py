@@ -15,7 +15,7 @@ class CheckpointManager(Node):
         super().__init__("waypoints")
 
         # waypoints = [[0, 0, 0, 0, 0, 0]]
-        with open('data/waypoints.json', 'r') as f:
+        with open('/home/selenas/SAUV/SAUV-Autonomy/src/guidance/data/waypoints.json', 'r') as f:
             waypoints = json.load(f)
         self._checkpoints = np.array(waypoints, dtype=np.float64)
         self._checkpoints_index = 0
@@ -58,7 +58,10 @@ class CheckpointManager(Node):
                 msg.orientation.z,
             ]
         )
-        if np.linalg.norm(current_pose - self._desired_pose) < 0.1:
+        print(f"TODO: change back error")
+        print(f"cur: {current_pose[0]}\ndesired:{self._desired_pose[0]")
+        # TODO CHANGE BACK ERROR
+        if current_pose[0] - self._desired_pose[0] < 0.3:
             self._desired_pose = self._checkpoints[self._checkpoints_index]
             if self._checkpoints_index < len(self._checkpoints) - 1:
                 self._checkpoints_index += 1

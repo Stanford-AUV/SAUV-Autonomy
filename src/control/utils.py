@@ -16,8 +16,8 @@ def to_np(o) -> np.ndarray:
     raise ValueError("Unsupported type for toNp")
 
 
-def pose_to_np(o: Pose | State):
-    if isinstance(o, Pose) or isinstance(o, State) or isinstance(o, Wrench):
+def pose_to_np(o: State | Pose):
+    if isinstance(o, State) or isinstance(o, Pose) or isinstance(o, Wrench):
         return np.array(
             [
                 o.position.x,
@@ -26,6 +26,20 @@ def pose_to_np(o: Pose | State):
                 o.orientation.x,
                 o.orientation.y,
                 o.orientation.z,
+            ]
+        
+        )
+
+def state_to_np(o: State | Pose):
+    if isinstance(o, State) or isinstance(o, Pose) or isinstance(o, Wrench):
+        return np.array(
+            [
+                o.position.x,
+                o.position.y,
+                o.position.z,
+                o.orientation_euler.x,
+                o.orientation_euler.y,
+                o.orientation_euler.z,
             ]
         )
 
