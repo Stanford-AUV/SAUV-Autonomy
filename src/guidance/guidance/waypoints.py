@@ -59,7 +59,7 @@ class CheckpointManager(Node):
             ]
         )
         print(f"TODO: change back error")
-        print(f"cur: {current_pose[0]}\ndesired:{self._desired_pose[0]")
+        print(f"cur: {current_pose[0]}\ndesired:{self._desired_pose[0]}")
         # TODO CHANGE BACK ERROR
         if current_pose[0] - self._desired_pose[0] < 0.3:
             self._desired_pose = self._checkpoints[self._checkpoints_index]
