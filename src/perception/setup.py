@@ -13,8 +13,6 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-            'perception_node = perception.perception_node:main',
-            'debug_node = perception.debug_node:main'
     maintainer='Stanford Robosub',
     maintainer_email='selenasun02@gmail.com',
     description='TODO: Package description',
@@ -23,8 +21,8 @@ setup(
     entry_points={
         'console_scripts': [
             f"oakd = {package_name}.oakd:main",
-            'perception_node = perception.perception_node:main',
-            'debug_node = perception.debug_node:main'
+            f"perception_node = {package_name}.perception_node:main",
+            f"debug_node = {package_name}.debug_node:main",
         ],
     },
 )
