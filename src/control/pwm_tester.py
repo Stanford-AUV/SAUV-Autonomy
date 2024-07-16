@@ -4,11 +4,12 @@ import time
 from control.force_to_pwm import total_force_to_individual_thrusts, thrusts_to_pwm
 
 def main():
-    portName = serial.Serial('/dev/ttyACM0', baudrate=9600, timeout=1)
+    portName = serial.Serial('/dev/ttyUSB_teensy', baudrate=9600, timeout=1)
     thruster_ids = [f"thruster{i}" for i in range(1, 9)]
-    testing_wrench = np.array([1, 0, 0, 0, 0, 0])
+    testing_wrench = np.array([0, -0.0, 0, 0, 0, 0])
     thrusts = total_force_to_individual_thrusts(testing_wrench)
     pwms = thrusts_to_pwm(thrusts)
+    # pwms = [1500, 1500, 1500, 1500, 1450, 1550, 1450, 1550] # specify pwms here
     print(f'pwms: {pwms}')
 
     n = 20
@@ -22,7 +23,6 @@ def main():
                 command = f"{i+2} 1500\n"
             else:
                 command = f"{i+2} {pwms[i]}\n"
-            print(f"command: {command}")
             portName.write(command.encode())
             ##time.sleep(.1)
 

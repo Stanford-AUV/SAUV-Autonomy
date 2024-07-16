@@ -1,0 +1,36 @@
+state_estimator:
+  ros__parameters:
+    ekf.dt: 0.1
+    ekf.horizon_delay: 0.04
+
+    dvl.offset_x: -0.16256
+    dvl.offset_y: 0.0
+    dvl.offset_z: 0.110236
+    dvl.cov_x: 0.0001
+    dvl.cov_y: 0.0001
+    dvl.cov_z: 0.0001
+
+    imu.orientation_cov_x: 1.218e-5
+    imu.orientation_cov_y: 1.218e-5
+    imu.orientation_cov_z: 1.218e-5
+    imu.accel_cov_x: 1.218e-5
+    imu.accel_cov_y: 1.218e-5
+    imu.accel_cov_z: 1.218e-5
+
+    depth.cov_z: 7.196207822120195e-06
+
+    process_cov.position_x: 0.01
+    process_cov.position_y: 0.01
+    process_cov.position_z: 0.01
+    process_cov.linear_vel_x: 0.01
+    process_cov.linear_vel_y: 0.01
+    process_cov.linear_vel_z: 0.01
+    process_cov.linear_accel_x: 0.01
+    process_cov.linear_accel_y: 0.01
+    process_cov.linear_accel_z: 0.01
+    process_cov.angular_position_x: 0.01
+    process_cov.angular_position_y: 0.01
+    process_cov.angular_position_z: 0.01
+    process_cov.angular_vel_x: 0.01
+    process_cov.angular_vel_y: 0.01
+    process_cov.angular_vel_z: 0.01
