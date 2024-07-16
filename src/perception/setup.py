@@ -13,13 +13,16 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='root',
-    maintainer_email='root@todo.todo',
+            'perception_node = perception.perception_node:main',
+            'debug_node = perception.debug_node:main'
+    maintainer='Stanford Robosub',
+    maintainer_email='selenasun02@gmail.com',
     description='TODO: Package description',
-    license='Apache-2.0',
+    license='TODO: License declaration',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            f"oakd = {package_name}.oakd:main",
             'perception_node = perception.perception_node:main',
             'debug_node = perception.debug_node:main'
         ],

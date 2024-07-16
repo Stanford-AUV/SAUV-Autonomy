@@ -5,7 +5,6 @@ from geometry_msgs.msg import Vector3
 import numpy as np
 import sys
 import time
-import pygame
 
 from std_msgs.msg import String
 
@@ -18,24 +17,9 @@ class ForwardPublisher(Node):
         timer_period = 0.1  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
         self.i = 0
-        pygame.init()
 
     def timer_callback(self):
-        wrench = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0]) 
-        for event in pygame.event.get():
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_UP:
-                    wrench += np.array([1.0, 0.0, 0.0, 0.0, 0.0, 0.0]) 
-                elif event.key == pygame.K_DOWN:
-                    wrench += np.array([-1.0, 0.0, 0.0, 0.0, 0.0, 0.0]) 
-                elif event.key == pygame.K_LEFT:
-                    wrench += np.array([0.0, -1.0, 0.0, 0.0, 0.0, 0.0]) 
-                elif event.key == pygame.K_RIGHT:
-                    wrench += np.array([0.0, 1.0, 0.0, 0.0, 0.0, 0.0]) 
-                elif event.key == pygame.K_u:
-                    wrench += np.array([0.0, 0.0, 1.0, 0.0, 0.0, 0.0]) 
-                elif event.key == pygame.K_j:
-                    wrench += np.array([0.0, 0.0, -1.0, 0.0, 0.0, 0.0]) 
+        wrench = np.array([.0, -0.0, -0.0, 0.0, 0.0, 0.0]) 
         msg = Wrench()
         msg.force = Vector3(x=wrench[0], y=wrench[1], z=wrench[2])
         msg.torque = Vector3(x=wrench[3], y=wrench[4], z=wrench[5])

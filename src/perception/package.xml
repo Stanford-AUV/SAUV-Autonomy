@@ -6,12 +6,10 @@
   <description>Perception Node</description>
   <maintainer email="yzd@stanford.edu">root</maintainer>
   <license>Apache-2.0</license>
-
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>
   <test_depend>ament_pep257</test_depend>
   <test_depend>python3-pytest</test_depend>
-
   <depend>cv_bridge</depend>
   <depend>std_srvs</depend>
   <depend>sensor_msgs</depend>

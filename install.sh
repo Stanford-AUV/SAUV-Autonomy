@@ -1,4 +1,4 @@
-sudo apt install software-properties-common
+sudo apt install -y software-properties-common
 sudo add-apt-repository universe
 sudo apt update && sudo apt install curl -y
 sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg
@@ -19,15 +19,17 @@ sudo apt install -y \
    python3-flake8-quotes \
    python3-pytest-repeat \
    python3-pytest-rerunfailures
-sudo apt install ros-humble-desktop
-sudo apt install ros-dev-tools
+sudo apt install -y ros-humble-desktop
+sudo apt install -y ros-dev-tools
 echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
 echo "export PYTHONPATH=${PYTHONPATH}:$PWD/src" >> ~/.bashrc
 source ~/.bashrc
 printenv | grep -i ROS
-sudo apt-get install ros-${ROS_DISTRO}-ros-gz
-sudo apt-get install ros-${ROS_DISTRO}-ros-ign-bridge
-sudo apt-get install ros-${ROS_DISTRO}-teleop-twist-keyboard
+sudo apt-get install -y ros-${ROS_DISTRO}-ros-gz
+sudo apt-get install -y ros-${ROS_DISTRO}-ros-ign-bridge
+sudo apt-get install -y ros-${ROS_DISTRO}-teleop-twist-keyboard
+sudo apt install -y ros-${ROS_DISTRO}-nmea-msgs
+sudo apt install -y ros-${ROS_DISTRO}-mavros-msgs
 python3 -m pip install -r requirements.txt
 sudo rosdep init
 rosdep update

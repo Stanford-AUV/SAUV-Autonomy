@@ -1,6 +1,9 @@
 import numpy as np
 import json
 
+"""
+Robot Orientation
+"""
 
 def quadratic_model(x, a, b):
     return a * np.square(x - b)
@@ -23,34 +26,47 @@ COEFFS = {
 TAM = np.empty(shape=(6, 8))
 
 # thruster positions in body frame
-# NOTE: these are the Gazebo sim positions, to be changed later
+# Real robot axes, the axes in Gazebo are different
+
+"""
+Frame measurements:
+x length: 0.56m. Motors on frame
+y length: 0.30m, Add/subtract 0.076m to get motor positions
+z length: 0.43m. Motors 0.09m and 0.254m off the ground
+
+Motor positions are meant to be relative to CG
+For ease of measurement we assume CG is at the center of the frame
+"""
+
 r_is = np.array(
     [
-        [+0.272, +0.22, -0.14],  # thruster 1
-        [-0.272, +0.22, -0.14],  # ... 2
-        [-0.272, -0.22, -0.14],  # ... 3
-        [+0.272, -0.22, -0.14],  # ... 4
-        [+0.272, -0.22, 0],  # ... 5
-        [+0.272, +0.22, 0],  # ... 6
-        [-0.272, +0.22, 0],  # ... 7
-        [-0.272, -0.22, 0],  # ... 8
+        [-0.272, +0.22, -0.125],  # ... pin 2 bottom, lower right
+        [+0.272, +0.22, -0.125],  # ... pin 3 bottom, upper right
+        [+0.272, -0.22, -0.125],  # ... pin 4 bottom, upper left
+        [-0.272, -0.22, -0.125],  # ... pin 5 bottom, lower left
+        [-0.272, -0.22, 0.04],  # ... pin 6 top, lower left
+        [-0.272, +0.22, 0.04],  # ... pin 7 top, lower right
+        [+0.272, +0.22, 0.04],  # ... pin 8 top, upper right
+        [+0.272, -0.22, 0.04],  # ... pin 9, top, upper left
     ]
 )
 
 # thruster orientations
 # note: these point in the direction of positive thrust; z axis can be changed accordingly
+
 u_is = np.array(
     [
-        [0, 0, 1],
         [0, 0, -1],
-        [0, 0, 1],
         [0, 0, -1],
+        [0, 0, -1],
+        [0, 0, 1], # pin 5, weak. perhaps faulty. check cables?
+        [-1, 1, 0],
         [-1, -1, 0],
-        [1, -1, 0],
+        [-1, 1,0],
         [-1, -1, 0],
-        [1, -1, 0],
     ]
 )
+
 u_is = u_is / np.linalg.norm(u_is, axis=1)[:, None]
 
 TAM[:3, :] = u_is.T
@@ -66,7 +82,7 @@ def total_force_to_individual_thrusts(desired_wrench):
     return TAM_inv @ desired_wrench
 
 
-def thrust_to_pwm(thrust, voltage=14.8):
+def thrust_to_pwm(thrust, voltage=15.8):
     """Converts a desired thrust to motor PWM values."""
 
     if voltage > 20:
