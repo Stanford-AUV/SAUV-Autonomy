@@ -54,16 +54,29 @@ r_is = np.array(
 # thruster orientations
 # note: these point in the direction of positive thrust; z axis can be changed accordingly
 
+# old_u_is = np.array(
+#     [
+#         [0, 0, -1],
+#         [0, 0, -1],
+#         [0, 0, -1],
+#         [0, 0, 1], # pin 5, weak. perhaps faulty. check cables?
+#         [-1, 1, 0],
+#         [-1, -1, 0],
+#         [-1, 1,0],
+#         [-1, -1, 0],
+#     ]
+# )
+
 u_is = np.array(
     [
         [0, 0, -1],
         [0, 0, -1],
         [0, 0, -1],
-        [0, 0, 1], # pin 5, weak. perhaps faulty. check cables?
-        [-1, 1, 0],
-        [-1, -1, 0],
-        [-1, 1,0],
-        [-1, -1, 0],
+        [0, 0, -1],
+        [np.cos(np.pi/4), -np.sin(np.pi/4), 0],
+        [np.cos(np.pi/4), np.sin(np.pi/4), 0],
+        [np.cos(np.pi/4), -np.sin(np.pi/4), 0],
+        [np.cos(np.pi/4), np.sin(np.pi/4), 0],
     ]
 )
 
@@ -82,7 +95,7 @@ def total_force_to_individual_thrusts(desired_wrench):
     return TAM_inv @ desired_wrench
 
 
-def thrust_to_pwm(thrust, voltage=15.8):
+def thrust_to_pwm(thrust, voltage=15.6):
     """Converts a desired thrust to motor PWM values."""
 
     if voltage > 20:
@@ -96,15 +109,18 @@ def thrust_to_pwm(thrust, voltage=15.8):
     if -thrust > 0.8 * (0.266 * voltage - 0.272):  # mx + b, calculated by hand
         raise ValueError("Reverse thrust exceeds the maximum limit")
 
+    to_add = 0 # should be centered around 1500, inverse quad model is centering around 1482 for 14-16V
     if voltage >= 18:
         low = 18
         high = 20
     elif voltage >= 16:
         low = 16
         high = 18
+        to_add = 26
     elif voltage >= 14:
         low = 14
         high = 16
+        to_add = 18
     elif voltage >= 12:
         low = 12
         high = 14
@@ -115,28 +131,41 @@ def thrust_to_pwm(thrust, voltage=15.8):
     weight = (thrust - low) / 2
     low_pwm = inverse_quadratic_model(thrust, *COEFFS[low])
     high_pwm = inverse_quadratic_model(thrust, *COEFFS[high])
-    pwm = (1 - weight) * low_pwm + weight * high_pwm
+    pwm = (1 - weight) * low_pwm + weight * high_pwm + to_add
 
     return np.array(np.round(pwm), dtype=int)
 
 
-def thrusts_to_pwm(thrusts):
+def all_thrusts_to_pwm(thrusts):
     """Converts a desired array of thrusts to motor PWM values."""
     return np.array([thrust_to_pwm(thrust) for thrust in thrusts])
 
+def test(thrust_distribution = False, pwm_distribution = False):
+    thrust0 = [0, 0, 0, 0, 0, 0]
+    thrust1 = [1, 0, 0, 0, 0, 0]
+    thrust2 = [0, 1, 0, 0, 0, 0]
+    thrust3 = [0, 0, 1, 0, 0, 0]
+    thrust4 = [0, 0, 0, 0, 0, 1]
+
+    # Test correct allocation of thrusts
+    if thrust_distribution or pwm_distribution:
+        ind0 = total_force_to_individual_thrusts(thrust0)
+        ind1 = total_force_to_individual_thrusts(thrust1)
+        ind2 = total_force_to_individual_thrusts(thrust2)
+        ind3 = total_force_to_individual_thrusts(thrust3)
+        ind4 = total_force_to_individual_thrusts(thrust4)
+        if thrust_distribution:
+            print(f"distributed thrusts:\nnone:\n{ind0}\n\nx:\n{ind1}\n\ny:\n{ind2}\n\nz:\n{ind3}\n\nyaw:\n{ind4}\n")
+
+    # Check correct pwm calculation
+    if pwm_distribution:
+        pwm0 = all_thrusts_to_pwm(ind0)
+        pwm1 = all_thrusts_to_pwm(ind1)
+        pwm2 = all_thrusts_to_pwm(ind2)
+        pwm3 = all_thrusts_to_pwm(ind3)
+        pwm4 = all_thrusts_to_pwm(ind4)
+        print(f"pwm arrays:\nnone:\n{pwm0}\n\nx:\n{pwm1}\n\ny\n{pwm2}\n\nz\n{pwm3}\n\nyaw\n{pwm4}\n")
+
 
 if __name__ == "__main__":
-    print(thrust_to_pwm(0, voltage=18))
-    print(thrust_to_pwm(0, voltage=15))
-    print(thrust_to_pwm(0, voltage=12))
-
-    print(thrust_to_pwm(2, voltage=18))
-    print(thrust_to_pwm(2, voltage=15))
-    print(thrust_to_pwm(2, voltage=12))
-
-    print(thrust_to_pwm(-2, voltage=18))
-    print(thrust_to_pwm(-2, voltage=15))
-    print(thrust_to_pwm(-2, voltage=12))
-
-    # TODO test thrust_to_pwm using margins of errors
-    # print(total_force_to_individual_pwm(np.array([1, 0, 0, 0, 0, 0])))
+    test()
