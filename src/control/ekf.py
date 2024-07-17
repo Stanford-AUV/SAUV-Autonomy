@@ -73,6 +73,7 @@ class EKF:
 
         # Innovation covariance
         S = H @ self.P @ H.T + R
+        S += np.eye(S.shape[0]) * 1e-6  # Regularize S to ensure it is invertible
         # Kalman gain
         K = self.P @ H.T @ np.linalg.inv(S)
 
@@ -108,6 +109,7 @@ class EKF:
         R = self.R_dvl
 
         S = H @ self.P @ H.T + R
+        S += np.eye(S.shape[0]) * 1e-6  # Regularize S to ensure it is invertible
         K = self.P @ H.T @ np.linalg.inv(S)
 
         y_hat = H @ self.state
@@ -132,6 +134,7 @@ class EKF:
         R = self.R_depth
 
         S = H @ self.P @ H.T + R
+        S += np.eye(S.shape[0]) * 1e-6  # Regularize S to ensure it is invertible
         K = self.P @ H.T @ np.linalg.inv(S)
 
         y_hat = H @ self.state
