@@ -151,7 +151,6 @@ class Controller(Node):
 
         # Publish a list of control outputs:
         # [force_x, force_y, force_z, torque_roll, torque_pitch, torque_yaw]
-        wrench *= -1
         msg = Wrench(
             force=Vector3(x=wrench[0], y=wrench[1], z=wrench[2]),
             torque=Vector3(x=wrench[3], y=wrench[4], z=wrench[5]),
