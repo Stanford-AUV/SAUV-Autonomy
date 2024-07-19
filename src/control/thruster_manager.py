@@ -4,7 +4,7 @@ import numpy as np
 
 from std_msgs.msg import Int16, Float64
 from msgs.msg import Wrench
-from control.force_to_pwm import total_force_to_individual_thrusts, thrusts_to_pwm
+from control.force_to_pwm import total_force_to_individual_thrusts, all_thrusts_to_pwm
 from control.utils import wrench_to_np
 
 
@@ -35,7 +35,7 @@ class ThrusterManager(Node):
 
     def timer_callback(self):
         thrusts = total_force_to_individual_thrusts(self.wrench)
-        pwms = thrusts_to_pwm(thrusts)
+        pwms = all_thrusts_to_pwm(thrusts)
         for i, thrust in enumerate(thrusts.tolist()):
             msg = Float64()
             msg.data = thrust
