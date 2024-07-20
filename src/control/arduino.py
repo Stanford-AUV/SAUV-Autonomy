@@ -10,7 +10,7 @@ class Arduino(Node):
         super().__init__("arduino")
 
         self._zero_thrust = 1500
-        self._allow_thrust = False # thrust enable flag
+        self._allow_thrust = True # thrust enable flag
         self._thruster_ids = [f"thruster_{i}" for i in range(1, 9)]
         self._subscribers = []
 
