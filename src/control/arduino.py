@@ -2,7 +2,7 @@ import serial
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Int16
-from msgs.msg import Cmd
+from srvs.srv import MotorEnable
 
 class Arduino(Node):
 
@@ -11,6 +11,8 @@ class Arduino(Node):
 
         self._zero_thrust = 1500
         self._allow_thrust = True # thrust enable flag
+        self._enable_srv = self.create_service(MotorEnable, 'motor_enable', self.enable_callback)
+
         self._thruster_ids = [f"thruster_{i}" for i in range(1, 9)]
         self._subscribers = []
 
@@ -39,6 +41,7 @@ class Arduino(Node):
         if(False == self._allow_thrust): # nullify all thurst commands if flag is not enabled
             self.get_logger().info(f'[MOTORS DISABLED] - Received {msg.data} for thruster {thruster_number}')
         else:
+            self.get_logger().info(f'Received {msg.data} for thruster {thruster_number}')
             pwm_value = msg.data 
 
         command = f'{thruster_number} {pwm_value}\n'
@@ -48,20 +51,28 @@ class Arduino(Node):
         except serial.SerialException as e:
             self.get_logger().error(f'Failed to write to serial port: {e}')
 
-    def cmd_callback(self, msg):
-        if msg.enable_thrust == True:
+    def enable_callback(self, request, response):
+        response.success = False
+        if request.enable == True:
             self._allow_thrust = True
-        elif msg.enable_thrust == False: # if false, prevent commands and set all thrusters to zero
+            response.success = True
+            self.get_logger().info('Enable callback - Motors enabled')
+        else: # if false, prevent commands and set all thrusters to zero
             self._allow_thrust = False
-            for i in enumerate(self._thruster_ids):
+            response.success = True
+            for i, thruster_id in enumerate(self._thruster_ids):
                 command = f'{i+2} {self._zero_thrust}\n'
                 try:
                     self.portName.write(command.encode())
                     # self.get_logger().info(f'Sent to thruster {thruster_number}: {pwm_value} pwm')
                 except serial.SerialException as e:
                     self.get_logger().error(f'Failed to write to serial port: {e}')
-                 
+                    response.success = False # if any fail, send failure command
+                    
+            self.get_logger().info('Enable callback - Motors disabled')
+        return response
 
+                
 def main(args=None):
     rclpy.init(args=args)
     arduino = Arduino()

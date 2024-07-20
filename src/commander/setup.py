@@ -1,4 +1,6 @@
 from setuptools import find_packages, setup
+import os
+from glob import glob
 
 package_name = 'commander'
 
@@ -19,7 +21,8 @@ setup(
     license='TODO: License declaration',
     tests_require=['pytest'],
     entry_points={
-        'console_scripts': [
+        "console_scripts": [
+            f"commander_console = {package_name}.commander_console:main"
         ],
     },
 )
