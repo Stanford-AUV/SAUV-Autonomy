@@ -74,7 +74,7 @@ class Arduino(Node):
 def main(args=None):
     rclpy.init(args=args)
     arduino = Arduino()
-    rclpy.spin(arduino)
+    rclpy.spin(arduino) # add try/except here to catch SystemExit to send a kill command before termination!
     arduino.destroy_node()
     rclpy.shutdown()
 
