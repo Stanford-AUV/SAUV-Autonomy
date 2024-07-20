@@ -10,8 +10,7 @@ from simple_pid import PID
 from scipy.spatial.transform import Rotation as R
 from guidance.trapezoidal_motion_profile import TrapezoidalMotionProfile
 import json
-import json
-
+import math
 from control.utils import pose_to_np, state_to_np
 
 
@@ -76,6 +75,14 @@ class Controller(Node):
         # Motion profiles
         self.motion_profiles = [None] * self.dim_
         self.profile_start_time = None
+    
+    def normalize_angle(angle):
+        """Normalize the angle to be within the range of [-π, π]."""
+        while angle > math.pi:
+            angle -= 2 * math.pi
+        while angle < -math.pi:
+            angle += 2 * math.pi
+        return angle
 
     def state_callback(self, msg: State):
         """Get our current pose from a topic."""
@@ -128,7 +135,10 @@ class Controller(Node):
                     self.pids[i].setpoint = self.motion_profiles[i].get_desired_position(elapsed_time)
         """
         for i in range(self.dim_):
-            self.pids[i].setpoint = self.desired[i]
+            if i < 3:
+                self.pids[i].setpoint = self.desired[i]
+            else:
+                self.pids[i].setpoint = self.normalize_angle(self.desired[i])
 
         # Wrench in global frame
         global_wrench = np.array([pid(self.pose[i]) for i, pid in enumerate(self.pids)])
