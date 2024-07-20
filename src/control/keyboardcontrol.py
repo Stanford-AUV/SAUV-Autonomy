@@ -36,7 +36,7 @@
 import sys
 import threading
 
-import geometry_msgs.msg
+from msgs.msg import Wrench
 import rclpy
 
 if sys.platform == 'win32':
@@ -148,10 +148,7 @@ def main():
     if not stamped and frame_id:
         raise Exception("'frame_id' can only be set when 'stamped' is True")
 
-    if stamped:
-        WrenchMsg = geometry_msgs.msg.WrenchStamped
-    else:
-        WrenchMsg = geometry_msgs.msg.Wrench
+    WrenchMsg = Wrench
 
     pub = node.create_publisher(WrenchMsg, 'desired_wrench', 10)
 

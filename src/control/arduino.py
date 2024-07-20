@@ -33,8 +33,6 @@ class Arduino(Node):
             self._subscribers.append(subscriber)
             self.get_logger().info(f"Subscribed to thrusters/{thruster}/pwm")
 
-        self.cmd_sub = self.create_subscription(Cmd, "command", 10, self.cmd_callback)
-
     def listener_callback(self, thruster_number, msg):
         # self.get_logger().info(f"Received PWM: {msg.data} for thruster {thruster_number}")
         pwm_value = self._zero_thrust
