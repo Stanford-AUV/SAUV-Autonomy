@@ -39,7 +39,7 @@ class Arduino(Node):
         # self.get_logger().info(f"Received PWM: {msg.data} for thruster {thruster_number}")
         pwm_value = self._zero_thrust
         if(False == self._allow_thrust): # nullify all thurst commands if flag is not enabled
-            self.get_logger().info(f'[MOTORS DISABLED] - Received {msg.data} for thruster {thruster_number}')
+            self.get_logger().info(f'Received {msg.data} for thruster {thruster_number} - [ WARN: MOTORS DISABLED ] ')
         else:
             self.get_logger().info(f'Received {msg.data} for thruster {thruster_number}')
             pwm_value = msg.data 
@@ -69,7 +69,7 @@ class Arduino(Node):
                     self.get_logger().error(f'Failed to write to serial port: {e}')
                     response.success = False # if any fail, send failure command
                     
-            self.get_logger().info('Enable callback - Motors disabled')
+            self.get_logger().info('Enable callback - Motors disabled and zero thrust sent')
         return response
 
                 
