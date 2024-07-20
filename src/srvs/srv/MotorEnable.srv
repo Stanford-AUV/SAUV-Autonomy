@@ -1,0 +1,3 @@
+bool enable  # Request: true to enable motors, false to disable
+---
+bool success # Response: true if the operation was successful, false otherwise

@@ -1,108 +1,237 @@
-import rclpy
-from rclpy.node import Node
-import numpy as np
+# Modified for SAUV.
+# 
+# Copyright 2011 Brown University Robotics.
+# Copyright 2017 Open Source Robotics Foundation, Inc.
+# All rights reserved.
+#
+# Software License Agreement (BSD License 2.0)
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+#  * Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#  * Redistributions in binary form must reproduce the above
+#    copyright notice, this list of conditions and the following
+#    disclaimer in the documentation and/or other materials provided
+#    with the distribution.
+#  * Neither the name of the Willow Garage nor the names of its
+#    contributors may be used to endorse or promote products derived
+#    from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+
 import sys
-import time
-import getch
 import threading
-import signal
 
 from msgs.msg import Wrench
-from geometry_msgs.msg import Vector3
+import rclpy
 
-MAX_THRUST = 0.8
-MAX_TORQUE = 0.1
-THRUST_INCREMENT = 0.1
+if sys.platform == 'win32':
+    import msvcrt
+else:
+    import termios
+    import tty
 
-class KeyboardControl(Node):
-    def __init__(self):
-        super().__init__("keyboard_control")
-        self.publisher_ = self.create_publisher(Wrench, "desired_wrench", 10)
-        self.record = "--record" in sys.argv
-        self.file = open("wrench.txt", "w") if self.record else None
 
-        self.timer = self.create_timer(0.1, self.timer_callback)
-        self.wrench = np.zeros(6)
-        self.current_thrust = 0.0
+msg = """
+This node takes keypresses from the keyboard and publishes them
+as Wrench/WrenchStamped messages. It works best with a US keyboard layout.
+---------------------------
+Moving around:
+   u    i    o
+   j    k    l
+   m    ,    .
 
-        self.force_x = 0.0
-        self.force_y = 0.0
-        self.force_z = 0.0
-        self.torque_z = 0.0
+For Holonomic mode (strafing), hold down the shift key:
+---------------------------
+   U    I    O
+   J    K    L
+   M    <    >
 
-        self.running = True
+t : up (+z)
+b : down (-z)
 
-        self.key_thread = threading.Thread(target=self.key_listener)
-        self.key_thread.daemon = True
-        self.key_thread.start()
+anything else : stop
 
-        # Register the signal handlers
-        signal.signal(signal.SIGINT, self.signal_handler)
-        signal.signal(signal.SIGTERM, self.signal_handler)
+q/z : increase/decrease max forces by 10%
+w/x : increase/decrease only linear force by 10%
+e/c : increase/decrease only angular force by 10%
 
-    def signal_handler(self, sig, frame):
-        self.get_logger().info('Shutting down...')
-        self.running = False
-        self.destroy_node()
+CTRL-C to quit
+"""
+
+moveBindings = {
+    'i': (1, 0, 0, 0, 0, 0),
+    'o': (1, 0, 0, 0, 0, -1),
+    'j': (0, 0, 0, 0, 0, 1),
+    'l': (0, 0, 0, 0, 0, -1),
+    'u': (1, 0, 0, 0, 0, 1),
+    ',': (-1, 0, 0, 0, 0, 0),
+    '.': (-1, 0, 0, 0, 0, 1),
+    'm': (-1, 0, 0, 0, 0, -1),
+    'O': (1, -1, 0, 0, 0, 0),
+    'I': (1, 0, 0, 0, 0, 0),
+    'J': (0, 1, 0, 0, 0, 0),
+    'L': (0, -1, 0, 0, 0, 0),
+    'U': (1, 1, 0, 0, 0, 0),
+    '<': (-1, 0, 0, 0, 0, 0),
+    '>': (-1, -1, 0, 0, 0, 0),
+    'M': (-1, 1, 0, 0, 0, 0),
+    't': (0, 0, 1, 0, 0, 0),
+    'b': (0, 0, -1, 0, 0, 0),
+}
+
+forceBindings = {
+    'q': 1.1,
+    'z': 0.9,
+    'w': 1.1,
+    'x': 0.9,
+}
+
+torqueBindings = {
+    'e': 1.1,
+    'c': 0.9,
+}
+
+
+def getKey(settings):
+    if sys.platform == 'win32':
+        # getwch() returns a string on Windows
+        key = msvcrt.getwch()
+    else:
+        tty.setraw(sys.stdin.fileno())
+        # sys.stdin.read() returns a string on Linux
+        key = sys.stdin.read(1)
+        termios.tcsetattr(sys.stdin, termios.TCSADRAIN, settings)
+    return key
+
+
+def saveTerminalSettings():
+    if sys.platform == 'win32':
+        return None
+    return termios.tcgetattr(sys.stdin)
+
+
+def restoreTerminalSettings(old_settings):
+    if sys.platform == 'win32':
+        return
+    termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
+
+
+def forces(force, torque):
+    return 'currently:\tforce %s\ttorque %s ' % (force, torque)
+
+
+def main():
+    settings = saveTerminalSettings()
+
+    rclpy.init()
+
+    node = rclpy.create_node('keyboardcontrol')
+
+    # parameters
+    stamped = node.declare_parameter('stamped', False).value
+    frame_id = node.declare_parameter('frame_id', '').value
+    if not stamped and frame_id:
+        raise Exception("'frame_id' can only be set when 'stamped' is True")
+
+    WrenchMsg = Wrench
+
+    pub = node.create_publisher(WrenchMsg, 'desired_wrench', 10)
+
+    spinner = threading.Thread(target=rclpy.spin, args=(node,))
+    spinner.start()
+
+    force = 0.5
+    torque = 1.0
+    x = 0.0
+    y = 0.0
+    z = 0.0
+    th = 0.0
+    status = 0.0
+
+    wrench_msg = WrenchMsg()
+
+    if stamped:
+        wrench = wrench_msg.wrench
+        wrench_msg.header.stamp = node.get_clock().now().to_msg()
+        wrench_msg.header.frame_id = frame_id
+    else:
+        wrench = wrench_msg
+
+    try:
+        print(msg)
+        print(forces(force, torque))
+        while True:
+            key = getKey(settings)
+            if key in moveBindings.keys():
+                x = moveBindings[key][0]
+                y = moveBindings[key][1]
+                z = moveBindings[key][2]
+                th = moveBindings[key][5]
+            elif key in forceBindings.keys():
+                force *= forceBindings[key]
+                print(forces(force, torque))
+                if status == 14:
+                    print(msg)
+                status = (status + 1) % 15
+            elif key in torqueBindings.keys():
+                torque *= torqueBindings[key]
+                print(forces(force, torque))
+                if status == 14:
+                    print(msg)
+                status = (status + 1) % 15
+            else:
+                x = 0.0
+                y = 0.0
+                z = 0.0
+                th = 0.0
+                if key == '\x03':
+                    break
+
+            if stamped:
+                wrench_msg.header.stamp = node.get_clock().now().to_msg()
+
+            wrench.force.x = x * force
+            wrench.force.y = y * force
+            wrench.force.z = z * force
+            wrench.torque.x = 0.0
+            wrench.torque.y = 0.0
+            wrench.torque.z = th * torque
+            pub.publish(wrench_msg)
+
+    except Exception as e:
+        print(e)
+
+    finally:
+        if stamped:
+            wrench_msg.header.stamp = node.get_clock().now().to_msg()
+
+        wrench.force.x = 0.0
+        wrench.force.y = 0.0
+        wrench.force.z = 0.0
+        wrench.torque.x = 0.0
+        wrench.torque.y = 0.0
+        wrench.torque.z = 0.0
+        pub.publish(wrench_msg)
         rclpy.shutdown()
+        spinner.join()
 
-    def key_listener(self):
-        while self.running:
-            key = getch.getch()
-            self.on_press(key)
+        restoreTerminalSettings(settings)
 
-    def on_press(self, key):
-        self.get_logger().info(f"Key pressed: {key}")
-        if key == 'w':
-            self.force_x = self.current_thrust
-        elif key == 's':
-            self.force_x = -self.current_thrust
-        elif key == 'd':
-            self.force_y = self.current_thrust
-        elif key == 'a':
-            self.force_y = -self.current_thrust
-        elif key == 'i':
-            self.force_z = self.current_thrust
-        elif key == 'k':
-            self.force_z = -self.current_thrust
-        elif key == 'j':
-            self.torque_z = MAX_TORQUE
-        elif key == 'l':
-            self.torque_z = -MAX_TORQUE
-        elif key == 't':
-            self.current_thrust = min(self.current_thrust + THRUST_INCREMENT, MAX_THRUST)
-            self.get_logger().info(f"Current thrust increased to: {self.current_thrust}")
-        elif key == 'g':
-            self.current_thrust = max(self.current_thrust - THRUST_INCREMENT, 0.0)
-            self.get_logger().info(f"Current thrust decreased to: {self.current_thrust}")
-        elif key == 'x':
-            self.force_x = self.force_y = self.force_z = self.torque_z = 0.0
 
-    def timer_callback(self):
-        self.wrench = np.array([self.force_x, self.force_y, self.force_z, 0.0, 0.0, self.torque_z])
-        msg = Wrench()
-        msg.force = Vector3(x=self.force_x, y=self.force_y, z=self.force_z)
-        msg.torque = Vector3(x=0.0, y=0.0, z=self.torque_z)
-        self.publisher_.publish(msg)
-
-        self.get_logger().info(f"Publishing: {self.wrench}")
-
-        if self.record:
-            timestamp = time.time_ns()
-            self.file.write(f"{timestamp}: {self.wrench}\n")
-            self.file.flush()
-
-    def destroy_node(self):
-        if self.record:
-            self.file.close()
-        super().destroy_node()
-
-def main(args=None):
-    rclpy.init(args=args)
-    node = KeyboardControl()
-    rclpy.spin(node)
-    node.destroy_node()
-    rclpy.shutdown()
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
