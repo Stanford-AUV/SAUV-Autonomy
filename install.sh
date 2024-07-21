@@ -30,6 +30,7 @@ sudo apt-get install -y ros-${ROS_DISTRO}-ros-ign-bridge
 sudo apt-get install -y ros-${ROS_DISTRO}-teleop-twist-keyboard
 sudo apt install -y ros-${ROS_DISTRO}-nmea-msgs
 sudo apt install -y ros-${ROS_DISTRO}-mavros-msgs
+sudo apt install -y ros-${ROS_DISTRO}-tf-transformations
 python3 -m pip install -r requirements.txt
 sudo rosdep init
 rosdep update
