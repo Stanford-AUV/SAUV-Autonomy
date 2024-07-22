@@ -57,24 +57,36 @@ class Arduino(Node):
             self.get_logger().info('Enable callback - Motors enabled')
         else: # if false, prevent commands and set all thrusters to zero
             self._allow_thrust = False
-            response.success = True
-            for i, thruster_id in enumerate(self._thruster_ids):
-                command = f'{i+2} {self._zero_thrust}\n'
-                try:
-                    self.portName.write(command.encode())
-                    # self.get_logger().info(f'Sent to thruster {thruster_number}: {pwm_value} pwm')
-                except serial.SerialException as e:
-                    self.get_logger().error(f'Failed to write to serial port: {e}')
-                    response.success = False # if any fail, send failure command
-                    
+            response.success = self.kill_motors
             self.get_logger().info('Enable callback - Motors disabled and zero thrust sent')
         return response
+
+    def kill_motors(self):
+        self.get_logger().info('Kill command received')
+        result = True
+        for i, thruster_id in enumerate(self._thruster_ids):
+            command = f'{i+2} {self._zero_thrust}\n'
+            try:
+                self.portName.write(command.encode())
+                # self.get_logger().info(f'Sent to thruster {thruster_number}: {pwm_value} pwm')
+            except serial.SerialException as e:
+                self.get_logger().error(f'Failed to write to serial port: {e}')
+                result = False
+        return result
 
                 
 def main(args=None):
     rclpy.init(args=args)
     arduino = Arduino()
-    rclpy.spin(arduino) # add try/except here to catch SystemExit to send a kill command before termination!
+
+    try:
+        rclpy.spin(arduino)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        arduino.kill_motors()
+        return
+
     arduino.destroy_node()
     rclpy.shutdown()
 
