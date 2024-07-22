@@ -117,12 +117,22 @@ class Controller(Node):
             angle += 2 * math.pi
         return angle
 
-    def find_closest_angle(self, angle):
+    def find_closest_angle(self, cur_error):
         """Find closest angle, handling pi -> -pi wrapping"""
-        if self.pose[5] - angle > 2 * math.pi - (self.pose[5] - angle):
-            return 2 * math.pi - (self.pose[5] - angle) # CCW
+        # cur_error = self.normalize_angle(cur_error)
+        sign = np.sign(cur_error)
+        wrapped_error = 2 * np.pi - np.abs(cur_error)
+
+        if wrapped_error < cur_error:
+            error = -1 * sign * wrapped_error
+            self.get_logger().info(f"2pi Error: {error}, cur yaw: {self.pose[5]}")
+            self.get_logger().info(f"Current error: {cur_error}")
         else:
-            return -1 * (self.pose[5] - angle) # CW
+            error = cur_error
+            self.get_logger().info(f"Normal Error: {error}, cur yaw: {self.pose[5]}")
+            self.get_logger().info(f"Current error: {cur_error}")
+
+        return error
 
     def update(self):
         """Update the controller with the current state and publish to a topic"""
@@ -145,11 +155,12 @@ class Controller(Node):
                 self.pids[i].setpoint = self.desired[i]
             else:
                 self.pids[i].setpoint = self.normalize_angle(self.desired[i])
-                self.pids[i].error_map = self.find_closest_angle
+                if i == 5:
+                    self.pids[i].error_map = self.find_closest_angle
 
         # Wrench in global frame
         global_wrench = np.array([pid(self.pose[i]) for i, pid in enumerate(self.pids)])
-
+        
         # Convert wrench to local frame
         current_orientation = self.pose[3:]
         rotation_matrix = R.from_euler("xyz", -current_orientation).as_matrix()
@@ -168,18 +179,14 @@ class Controller(Node):
 
         # Publish a list of control outputs:
         # [force_x, force_y, force_z, torque_roll, torque_pitch, torque_yaw]
-        #  wrench[0] *= -1
-        # wrench[1] *= -1
-        wrench[2] *= -1
-        # wrench[5] *= -1
+        wrench[5] *= -1
         msg = Wrench(
             force=Vector3(x=wrench[0], y=wrench[1], z=wrench[2]),
             torque=Vector3(x=wrench[3], y=wrench[4], z=wrench[5]),
         )
-        self.get_logger().info("YAW WRENCH: %s" % wrench[5])
 
         self.output_publisher_.publish(msg)
-        # self.get_logger().info(f"Publishing wrench: {wrench}")
+        self.get_logger().info(f"Publishing wrench: {wrench}")
 
     def reset(self):
         """

@@ -19,7 +19,7 @@ class ForwardPublisher(Node):
         self.i = 0
 
     def timer_callback(self):
-        wrench = np.array([.0, .0, -.0, 0.0, 0.0, 0.0]) 
+        wrench = np.array([.0, .0, .0, 0.0, 0.0, 0.0]) 
         msg = Wrench()
         msg.force = Vector3(x=wrench[0], y=wrench[1], z=wrench[2])
         msg.torque = Vector3(x=wrench[3], y=wrench[4], z=wrench[5])
