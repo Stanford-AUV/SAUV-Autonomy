@@ -57,7 +57,7 @@ class Arduino(Node):
             self.get_logger().info('Enable callback - Motors enabled')
         else: # if false, prevent commands and set all thrusters to zero
             self._allow_thrust = False
-            response.success = self.kill_motors
+            response.success = self.kill_motors()
             self.get_logger().info('Enable callback - Motors disabled and zero thrust sent')
         return response
 
