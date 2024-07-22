@@ -14,7 +14,7 @@ class CheckpointManager(Node):
     def __init__(self):
         super().__init__("waypoints")
 
-        with open('/home/selenas/SAUV/SAUV-Autonomy/src/guidance/data/waypoints.json', 'r') as f: # orin filepath
+        with open('/home/selena/SAUV/SAUV-Autonomy/src/guidance/data/waypoints.json', 'r') as f: # orin filepath
             waypoints = json.load(f)
         self._checkpoints = np.array(waypoints, dtype=np.float64)
         self._checkpoints_index = 0

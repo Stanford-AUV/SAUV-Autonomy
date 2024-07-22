@@ -80,7 +80,7 @@ class Controller(Node):
         """Get our current pose from a topic."""
         with self.lock:
             self.pose = np.array(state_to_np(msg))
-            self.get_logger().info("Current state: %s" % self.pose)
+            # self.get_logger().info("Current state: %s" % self.pose)
             timestamp = Time(
                 seconds=msg.header.stamp.sec,
                 nanoseconds=msg.header.stamp.nanosec,
@@ -119,18 +119,18 @@ class Controller(Node):
 
     def find_closest_angle(self, cur_error):
         """Find closest angle, handling pi -> -pi wrapping"""
-        # cur_error = self.normalize_angle(cur_error)
-        sign = np.sign(cur_error)
+        cur_error = self.normalize_angle(self.normalize_angle(self.desired[5]) - self.normalize_angle(self.pose[5])) 
+        sign = 1 if cur_error > 0 else -1
         wrapped_error = 2 * np.pi - np.abs(cur_error)
 
         if wrapped_error < cur_error:
             error = -1 * sign * wrapped_error
-            self.get_logger().info(f"2pi Error: {error}, cur yaw: {self.pose[5]}")
-            self.get_logger().info(f"Current error: {cur_error}")
+            self.get_logger().info(f"2pi Error: {error}")
+            self.get_logger().info(f"Desired: {self.desired[5]}, YAW: {self.pose[5]}")
         else:
             error = cur_error
-            self.get_logger().info(f"Normal Error: {error}, cur yaw: {self.pose[5]}")
-            self.get_logger().info(f"Current error: {cur_error}")
+            self.get_logger().info(f"Normal Error: {error}")
+            self.get_logger().info(f"Desired: {self.desired[5]}, YAW: {self.pose[5]}")
 
         return error
 
@@ -204,7 +204,7 @@ def main(args=None):
     # Initialize controller gains
     #                      x, y, z, r, p, y
 
-    with open('/home/selenas/SAUV/SAUV-Autonomy/src/control/data/pid_gains.json', 'r') as f:
+    with open('/home/selena/SAUV/SAUV-Autonomy/src/control/data/pid_gains.json', 'r') as f:
         pid_gains = json.load(f)
 
     kP = np.array(pid_gains['kP'])
