@@ -75,14 +75,6 @@ class Controller(Node):
         # Motion profiles
         self.motion_profiles = [None] * self.dim_
         self.profile_start_time = None
-    
-    def normalize_angle(self, angle):
-        """Normalize the angle to be within the range of [-π, π]."""
-        while angle > math.pi:
-            angle -= 2 * math.pi
-        while angle < -math.pi:
-            angle += 2 * math.pi
-        return angle
 
     def state_callback(self, msg: State):
         """Get our current pose from a topic."""
@@ -117,6 +109,20 @@ class Controller(Node):
                 for i in range(self.dim_)
             ]
             """
+    def normalize_angle(self, angle):
+        """Normalize the angle to be within the range of [-π, π]."""
+        while angle > math.pi:
+            angle -= 2 * math.pi
+        while angle < -math.pi:
+            angle += 2 * math.pi
+        return angle
+
+    def find_closest_angle(self, angle):
+        """Find closest angle, handling pi -> -pi wrapping"""
+        if self.pose[5] - angle > 2 * math.pi - (self.pose[5] - angle):
+            return 2 * math.pi - (self.pose[5] - angle) # CCW
+        else:
+            return -1 * (self.pose[5] - angle) # CW
 
     def update(self):
         """Update the controller with the current state and publish to a topic"""
@@ -139,6 +145,7 @@ class Controller(Node):
                 self.pids[i].setpoint = self.desired[i]
             else:
                 self.pids[i].setpoint = self.normalize_angle(self.desired[i])
+                self.pids[i].error_map = self.find_closest_angle(self.desired[i])
 
         # Wrench in global frame
         global_wrench = np.array([pid(self.pose[i]) for i, pid in enumerate(self.pids)])
@@ -169,6 +176,7 @@ class Controller(Node):
             force=Vector3(x=wrench[0], y=wrench[1], z=wrench[2]),
             torque=Vector3(x=wrench[3], y=wrench[4], z=wrench[5]),
         )
+        self.get_logger().info("YAW WRENCH: %s" % self.wrench[5])
 
         self.output_publisher_.publish(msg)
         # self.get_logger().info(f"Publishing wrench: {wrench}")
