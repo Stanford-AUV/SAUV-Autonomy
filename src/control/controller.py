@@ -145,7 +145,7 @@ class Controller(Node):
                 self.pids[i].setpoint = self.desired[i]
             else:
                 self.pids[i].setpoint = self.normalize_angle(self.desired[i])
-                self.pids[i].error_map = self.find_closest_angle(self.desired[i])
+                self.pids[i].error_map = self.find_closest_angle
 
         # Wrench in global frame
         global_wrench = np.array([pid(self.pose[i]) for i, pid in enumerate(self.pids)])
