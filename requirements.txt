@@ -2,3 +2,4 @@ transforms3d
 scipy
 libusb1
 pyserial
+simple_pid

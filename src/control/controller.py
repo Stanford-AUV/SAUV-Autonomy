@@ -138,7 +138,7 @@ class Controller(Node):
             if i < 3:
                 self.pids[i].setpoint = self.desired[i]
             else:
-                self.pids[i].setpoint = self.desired[i]
+                self.pids[i].setpoint = self.normalize_angle(self.desired[i])
 
         # Wrench in global frame
         global_wrench = np.array([pid(self.pose[i]) for i, pid in enumerate(self.pids)])
