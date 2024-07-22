@@ -176,7 +176,7 @@ class Controller(Node):
             force=Vector3(x=wrench[0], y=wrench[1], z=wrench[2]),
             torque=Vector3(x=wrench[3], y=wrench[4], z=wrench[5]),
         )
-        self.get_logger().info("YAW WRENCH: %s" % self.wrench[5])
+        self.get_logger().info("YAW WRENCH: %s" % wrench[5])
 
         self.output_publisher_.publish(msg)
         # self.get_logger().info(f"Publishing wrench: {wrench}")
