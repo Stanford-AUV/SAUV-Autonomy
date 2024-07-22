@@ -39,7 +39,7 @@ class Arduino(Node):
         if(False == self._allow_thrust): # nullify all thurst commands if flag is not enabled
             self.get_logger().info(f'Received {msg.data} for thruster {thruster_number} - [ WARN: MOTORS DISABLED ] ')
         else:
-            self.get_logger().info(f'Received {msg.data} for thruster {thruster_number}')
+            # self.get_logger().info(f'Received {msg.data} for thruster {thruster_number}')
             pwm_value = msg.data 
 
         command = f'{thruster_number} {pwm_value}\n'

@@ -57,8 +57,8 @@ class CheckpointManager(Node):
                 msg.orientation.z,
             ]
         )
-        eps_position = 0.3 # TODO tune
-        eps_angle = 0.2 # TODO tune
+        eps_position = 0.4 # TODO tune
+        eps_angle = 1 # TODO tune
 
         position_error = np.linalg.norm(current_pose[:3] - self._desired_pose[:3])
         angle_error = np.dot(current_pose[3:], self._desired_pose[3:]) / (np.linalg.norm(current_pose[3:]) * np.linalg.norm(self._desired_pose[3:])) # cosine similarity

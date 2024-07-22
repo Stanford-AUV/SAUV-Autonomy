@@ -95,7 +95,7 @@ def total_force_to_individual_thrusts(desired_wrench):
     return TAM_inv @ desired_wrench
 
 
-def thrust_to_pwm(thrust, voltage=15.6):
+def thrust_to_pwm(thrust, voltage=15.0):
     """Converts a desired thrust to motor PWM values."""
 
     if voltage > 20:

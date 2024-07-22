@@ -47,7 +47,7 @@ class ThrusterManager(Node):
 
     def wrench_callback(self, msg: Wrench):
         self.wrench = wrench_to_np(msg)
-        self.get_logger().info(f"Received wrench {self.wrench}")
+        # self.get_logger().info(f"Received wrench {self.wrench}")
 
 
 def main(args=None):
