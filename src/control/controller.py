@@ -138,7 +138,7 @@ class Controller(Node):
             if i < 3:
                 self.pids[i].setpoint = self.desired[i]
             else:
-                self.pids[i].setpoint = self.normalize_angle(self.desired[i])
+                self.pids[i].setpoint = self.desired[i]
 
         # Wrench in global frame
         global_wrench = np.array([pid(self.pose[i]) for i, pid in enumerate(self.pids)])
@@ -161,6 +161,10 @@ class Controller(Node):
 
         # Publish a list of control outputs:
         # [force_x, force_y, force_z, torque_roll, torque_pitch, torque_yaw]
+        #  wrench[0] *= -1
+        # wrench[1] *= -1
+        wrench[2] *= -1
+        # wrench[5] *= -1
         msg = Wrench(
             force=Vector3(x=wrench[0], y=wrench[1], z=wrench[2]),
             torque=Vector3(x=wrench[3], y=wrench[4], z=wrench[5]),

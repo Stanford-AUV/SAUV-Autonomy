@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.linalg import block_diag, cholesky, LinAlgError
+from scipy.linalg import block_diag
 from scipy.spatial.transform import Rotation
 from rclpy.time import Time
 
@@ -36,8 +36,7 @@ class EKF:
         # Predict state covariance
         self.P = self.F @ self.P @ self.F.T + self.Q
 
-        # Ensure P is positive definite
-        self.P += np.eye(self.P.shape[0]) * 1e-6
+        # print(f"Predicted state: {self.state}")
 
     def update_measurement_covariance(self, buffer, R, new_measurement):
         # Convert new_measurement to a 2D array if it is a single value
@@ -52,8 +51,6 @@ class EKF:
                 R[0, 0] = updated_R.item()
             else:
                 R[:updated_R.shape[0], :updated_R.shape[1]] = updated_R
-            # Ensure R is positive definite
-            R += np.eye(R.shape[0]) * 1e-6
 
     def handle_imu_measurement(self, orientation, linear_acceleration, covariance, timestamp: Time):
         # Update orientation state
@@ -76,17 +73,8 @@ class EKF:
 
         # Innovation covariance
         S = H @ self.P @ H.T + R
-        S += np.eye(S.shape[0]) * 1e-6  # Regularize S to ensure it is invertible
-
-        # Use Cholesky decomposition for inversion
-        try:
-            S_chol = cholesky(S)
-            S_inv = np.linalg.inv(S_chol).T @ np.linalg.inv(S_chol)
-        except LinAlgError:
-            S_inv = np.linalg.pinv(S)
-
         # Kalman gain
-        K = self.P @ H.T @ S_inv
+        K = self.P @ H.T @ np.linalg.inv(S)
 
         # Actual measurement vector
         y = imu_measurement
@@ -100,7 +88,6 @@ class EKF:
         self.state = self.state + K @ innovation
         # Update state covariance
         self.P = (np.eye(15) - K @ H) @ self.P
-        self.P += np.eye(self.P.shape[0]) * 1e-6  # Ensure P remains positive definite
 
         # print(f"Updated state with IMU: {self.state}")
 
@@ -110,7 +97,7 @@ class EKF:
         # Update the DVL measurement covariance dynamically
         self.update_measurement_covariance(self.dvl_buffer, self.R_dvl, velocity)
 
-        # Convert DVL velocity to global frame
+         # Convert DVL velocity to global frame
         orientation = self.state[9:12]
         R = Rotation.from_euler('xyz', orientation)
         global_velocity = R.apply(velocity)
@@ -121,17 +108,7 @@ class EKF:
         R = self.R_dvl
 
         S = H @ self.P @ H.T + R
-        S += np.eye(S.shape[0]) * 1e-6  # Regularize S to ensure it is invertible
-
-        # Use Cholesky decomposition for inversion
-        try:
-            S_chol = cholesky(S)
-            S_inv = np.linalg.inv(S_chol).T @ np.linalg.inv(S_chol)
-        except LinAlgError:
-            S_inv = np.linalg.pinv(S)
-
-        # Kalman gain
-        K = self.P @ H.T @ S_inv
+        K = self.P @ H.T @ np.linalg.inv(S)
 
         y_hat = H @ self.state
 
@@ -140,7 +117,6 @@ class EKF:
 
         self.state = self.state + K @ innovation
         self.P = (np.eye(15) - K @ H) @ self.P
-        self.P += np.eye(self.P.shape[0]) * 1e-6  # Ensure P remains positive definite
 
         # print(f"Updated state with DVL: {self.state}")
 
@@ -156,17 +132,7 @@ class EKF:
         R = self.R_depth
 
         S = H @ self.P @ H.T + R
-        S += np.eye(S.shape[0]) * 1e-6  # Regularize S to ensure it is invertible
-
-        # Use Cholesky decomposition for inversion
-        try:
-            S_chol = cholesky(S)
-            S_inv = np.linalg.inv(S_chol).T @ np.linalg.inv(S_chol)
-        except LinAlgError:
-            S_inv = np.linalg.pinv(S)
-
-        # Kalman gain
-        K = self.P @ H.T @ S_inv
+        K = self.P @ H.T @ np.linalg.inv(S)
 
         y_hat = H @ self.state
 
@@ -175,7 +141,6 @@ class EKF:
 
         self.state = self.state + K @ innovation
         self.P = (np.eye(15) - K @ H) @ self.P
-        self.P += np.eye(self.P.shape[0]) * 1e-6  # Ensure P remains positive definite
 
         # print(f"Updated state with Depth: {self.state}")
 
