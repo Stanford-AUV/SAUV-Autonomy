@@ -76,7 +76,7 @@ class Controller(Node):
         self.motion_profiles = [None] * self.dim_
         self.profile_start_time = None
     
-    def normalize_angle(angle):
+    def normalize_angle(self, angle):
         """Normalize the angle to be within the range of [-π, π]."""
         while angle > math.pi:
             angle -= 2 * math.pi
