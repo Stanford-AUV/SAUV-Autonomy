@@ -14,7 +14,7 @@ class CheckpointManager(Node):
     def __init__(self):
         super().__init__("waypoints")
 
-        with open('/home/selena/SAUV/SAUV-Autonomy/src/guidance/data/waypoints.json', 'r') as f: # orin filepath
+        with open('/home/selenas/SAUV/SAUV-Autonomy/src/guidance/data/waypoints.json', 'r') as f: # orin filepath
             waypoints = json.load(f)
         self._checkpoints = np.array(waypoints, dtype=np.float64)
         self._checkpoints_index = 0
@@ -57,21 +57,21 @@ class CheckpointManager(Node):
                 msg.orientation.z,
             ]
         )
-        eps_position = 0.4 # TODO tune
-        eps_angle = 3 # TODO tune
+        eps_position = 0.1 # TODO tune
+        eps_angle = 2.25 # TODO tune
 
         position_error = np.linalg.norm(current_pose[:3] - self._desired_pose[:3])
         yaw_error = np.abs(current_pose[5] - self._desired_pose[5])
         # angle_error = np.dot(current_pose[3:], self._desired_pose[3:]) / (np.linalg.norm(current_pose[3:]) * np.linalg.norm(self._desired_pose[3:])) # cosine similarity
         self.get_logger().info(f"Position Error: {position_error}\nAngle Error: {yaw_error}")
-        x_error = current_pose[0] - self._desired_pose[0] # for specific waypoints
+        # x_error = current_pose[0] - self._desired_pose[0] # for specific waypoints
 
         # if x_error < eps_position:
         # if position_error < eps_position and angle_error < eps_angle:
-        if yaw_error < eps_angle:
+        if (yaw_error < eps_angle) and (position_error < eps_position) :
             if self._checkpoints_index < len(self._checkpoints) - 1:
                 self._checkpoints_index += 1
-            self._desired_pose = self._checkpoints[self._checkpoints_index]
+                self._desired_pose = self._checkpoints[self._checkpoints_index]
 
 
 def main(args=None):
