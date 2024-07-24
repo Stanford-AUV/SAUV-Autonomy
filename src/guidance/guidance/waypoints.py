@@ -6,6 +6,7 @@ import json
 from msgs.msg import Pose, State
 from geometry_msgs.msg import Vector3
 from std_msgs.msg import Header
+from control.utils import pose_to_np, state_to_np
 
 
 class CheckpointManager(Node):
@@ -18,11 +19,13 @@ class CheckpointManager(Node):
         self._checkpoints = np.array(waypoints, dtype=np.float64)
         self._checkpoints_index = 0
         self._desired_pose = self._checkpoints[self._checkpoints_index]
-
+        self._desired_pose_pub = self.create_publisher(Pose, "desired_pose", 10)
+        
+        self.dim_ = 6
+        self.pose = np.zeros(self.dim_)
         self._current_state_sub = self.create_subscription(
             State, "state", self.current_state_callback, 10
         )
-        self._desired_pose_pub = self.create_publisher(Pose, "desired_pose", 10)
 
         timer_period = 0.1  # TODO: Don't hardcode this
         self.timer = self.create_timer(timer_period, self.timer_callback)
@@ -36,9 +39,9 @@ class CheckpointManager(Node):
             angle += 2 * math.pi
         return angle
 
-    def find_yaw_error(self, current_pose, desired_pose): # TODO duplicate function
+    def find_yaw_error(self, current_yaw, desired_yaw): # TODO duplicate function
         """Find closest angle, handling pi -> -pi wrapping"""
-        cur_error = self.normalize_angle(self.normalize_angle(desired_pose[5]) - self.normalize_angle(current_pose[5])) 
+        cur_error = self.normalize_angle(self.normalize_angle(desired_yaw) - self.normalize_angle(current_yaw)) 
         sign = 1 if cur_error > 0 else -1
         wrapped_error = 2 * np.pi - np.abs(cur_error)
 
@@ -65,31 +68,19 @@ class CheckpointManager(Node):
         )
         # msg.data = pwm
         self._desired_pose_pub.publish(msg)
-        self.get_logger().info(f"Published desired_pose:\n[{msg.position.x}, {msg.position.y}, {msg.position.z}, {msg.orientation.x}, {msg.orientation.y}, {msg.orientation.z}]")
 
     def current_state_callback(self, msg: State):
-        current_pose = np.array(
-            [
-                msg.position.x,
-                msg.position.y,
-                msg.position.z,
-                msg.orientation.x,
-                msg.orientation.y,
-                msg.orientation.z,
-            ]
-        )
+        self.pose = np.array(state_to_np(msg))
         eps_position = 0.1 # TODO tune
-        eps_angle = 2.25 # TODO tune
+        eps_angle = 0.1 # TODO tune
 
-        position_error = np.linalg.norm(current_pose[:3] - self._desired_pose[:3])
-        yaw_error = self.find_yaw_error(current_pose, self._desired_pose)
-        # angle_error = np.dot(current_pose[3:], self._desired_pose[3:]) / (np.linalg.norm(current_pose[3:]) * np.linalg.norm(self._desired_pose[3:])) # cosine similarity
+        position_error = np.linalg.norm(self.pose[:3] - self._desired_pose[:3])
+        yaw_error = np.abs(self.find_yaw_error(self.pose[5], self._desired_pose[5]))
         self.get_logger().info(f"Position Error: {position_error}\nYaw Error: {yaw_error}")
         # x_error = current_pose[0] - self._desired_pose[0] # for specific waypoints
 
-        # if x_error < eps_position:
-        # if position_error < eps_position and angle_error < eps_angle:
-        if (yaw_error < eps_angle) and (position_error < eps_position) :
+        if yaw_error < eps_angle:
+        # if (yaw_error < eps_angle) and (position_error < eps_position):
             if self._checkpoints_index < len(self._checkpoints) - 1:
                 self._checkpoints_index += 1
                 self._desired_pose = self._checkpoints[self._checkpoints_index]
