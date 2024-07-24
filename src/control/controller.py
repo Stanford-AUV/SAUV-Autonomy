@@ -80,7 +80,6 @@ class Controller(Node):
         """Get our current pose from a topic."""
         with self.lock:
             self.pose = np.array(state_to_np(msg))
-            # self.get_logger().info("Current state: %s" % self.pose)
             timestamp = Time(
                 seconds=msg.header.stamp.sec,
                 nanoseconds=msg.header.stamp.nanosec,
@@ -101,8 +100,6 @@ class Controller(Node):
             max_acc = 0.5
             dt = 0.1
             
-            # self.get_logger().info("Desired pose: %s" % self.desired)
-
             """
             self.motion_profiles = [
                 TrapezoidalMotionProfile(self.pose[i], self.desired[i], max_vel, max_acc, dt)
@@ -125,13 +122,9 @@ class Controller(Node):
 
         if wrapped_error < cur_error:
             error = -1 * sign * wrapped_error
-            self.get_logger().info(f"2pi Error: {error}")
-            self.get_logger().info(f"Desired: {self.desired[5]}, YAW: {self.pose[5]}")
         else:
             error = cur_error
-            self.get_logger().info(f"Normal Error: {error}")
-            self.get_logger().info(f"Desired: {self.desired[5]}, YAW: {self.pose[5]}")
-
+        
         return error
 
     def update(self):
@@ -157,7 +150,7 @@ class Controller(Node):
                 self.pids[i].setpoint = self.normalize_angle(self.desired[i])
                 if i == 5:
                     self.pids[i].error_map = self.find_closest_angle
-
+        
         # Wrench in global frame
         global_wrench = np.array([pid(self.pose[i]) for i, pid in enumerate(self.pids)])
         
@@ -169,7 +162,6 @@ class Controller(Node):
         )
 
         np.set_printoptions(precision=2, suppress=True)
-        # self.get_logger().info(f"Local wrench: {local_wrench}")
 
         # Cap the wrench to prevent thrust from exceeding limits
         wrench = np.clip(local_wrench, -1, 1)
@@ -186,7 +178,6 @@ class Controller(Node):
         )
 
         self.output_publisher_.publish(msg)
-        self.get_logger().info(f"Publishing wrench: {wrench}")
 
     def reset(self):
         """
