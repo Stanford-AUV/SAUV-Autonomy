@@ -204,7 +204,7 @@ def main(args=None):
     # Initialize controller gains
     #                      x, y, z, r, p, y
 
-    with open('/home/selena/SAUV/SAUV-Autonomy/src/control/data/pid_gains.json', 'r') as f:
+    with open('/home/selenas/SAUV/SAUV-Autonomy/src/control/data/pid_gains.json', 'r') as f:
         pid_gains = json.load(f)
 
     kP = np.array(pid_gains['kP'])
