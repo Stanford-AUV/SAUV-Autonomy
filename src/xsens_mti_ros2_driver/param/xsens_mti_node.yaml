@@ -5,7 +5,7 @@
         ##          true:   the driver ignores port and baudrate settings, scans for devices on all ports and selects the first found
         ##          false: = Requires correct port and baudrate both to be specified
         scan_for_devices: fasle
-        port: "/dev/ttyUSB0" # port name, e.g. '/dev/ttyUSB0'
+        port: "/dev/ttyUSB_xsens_MTi_200" # port name, e.g. '/dev/ttyUSB0'
         baudrate: 115200 # non necessary for some devices
 
         ## Log file (optional), placed in /home/[user_name]/Documents/xsens_log
