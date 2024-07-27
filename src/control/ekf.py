@@ -52,24 +52,18 @@ class EKF:
             else:
                 R[:updated_R.shape[0], :updated_R.shape[1]] = updated_R
 
-    def handle_imu_measurement(self, orientation, linear_acceleration, covariance, timestamp: Time):
+    def handle_imu_measurement(self, orientation, covariance, timestamp: Time):
         # Update orientation state
         self.state[9:12] = orientation
 
-        # Convert linear acceleration to global frame
-        R = Rotation.from_euler('xyz', orientation)
-        global_accel = R.apply(linear_acceleration)
-        self.state[6:9] = global_accel
-
         # Update the IMU measurement covariance dynamically
-        imu_measurement = np.hstack([orientation, linear_acceleration])
+        imu_measurement = np.hstack([orientation])
         self.update_measurement_covariance(self.imu_buffer, self.R_imu, imu_measurement)
 
         # Measurement model
         R = self.R_imu
-        H = np.zeros((6, 15))
+        H = np.zeros((3, 15))
         H[0:3, 9:12] = np.eye(3)  # Orientation measurement matrix
-        H[3:6, 6:9] = np.eye(3)  # Acceleration measurement matrix
 
         # Innovation covariance
         S = H @ self.P @ H.T + R
