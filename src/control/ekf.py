@@ -15,7 +15,8 @@ class EKF:
         self.Q = np.diag(initial_process_covariance)  # Process noise covariance matrix
 
         # Measurement noise covariances
-        self.R_imu = np.diag(initial_measurement_covariances['imu'])
+        # self.R_imu = np.diag(initial_measurement_covariances['imu'])
+        self.R_imu = np.diag(initial_measurement_covariances['imu'][:3])
         self.R_dvl = np.diag(initial_measurement_covariances['dvl'])
         self.R_depth = np.array([[initial_measurement_covariances['depth']]])
 
@@ -39,7 +40,6 @@ class EKF:
         # print(f"Predicted state: {self.state}")
 
     def update_measurement_covariance(self, buffer, R, new_measurement):
-        # Convert new_measurement to a 2D array if it is a single value
         new_measurement = np.atleast_2d(new_measurement).T if np.isscalar(new_measurement) else np.atleast_2d(new_measurement)
         buffer.append(new_measurement)
         if len(buffer) > self.max_buffer_size:
@@ -66,7 +66,7 @@ class EKF:
         H[0:3, 9:12] = np.eye(3)  # Orientation measurement matrix
 
         # Innovation covariance
-        S = H @ self.P @ H.T + R
+        S = H @ self.P @ H.T + R  # This should now work correctly
         # Kalman gain
         K = self.P @ H.T @ np.linalg.inv(S)
 
@@ -84,6 +84,7 @@ class EKF:
         self.P = (np.eye(15) - K @ H) @ self.P
 
         # print(f"Updated state with IMU: {self.state}")
+
 
     def handle_dvl_measurement(self, velocity, covariance, timestamp: Time):
         # print(f"Handling DVL measurement at {timestamp}: velocity={velocity}")
