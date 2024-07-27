@@ -225,8 +225,11 @@ class StateEstimation(Node):
         covariance = self._imu_covariance
 
         # self.get_logger().info(f"IMU data: orientation={orientation}, linear_acceleration={linear_acceleration}")
+        # self._ekf.handle_imu_measurement(
+        #     orientation, linear_acceleration, covariance, timestamp
+        # )
         self._ekf.handle_imu_measurement(
-            orientation, linear_acceleration, covariance, timestamp
+            orientation, covariance, timestamp
         )
 
     def _handle_dvl(self, dvl_data: Twist):
