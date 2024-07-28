@@ -10,25 +10,36 @@ from sensor_msgs.msg import TimeReference
 from message_filters import Subscriber, TimeSynchronizer
 import tf_transformations
 
+
 class ImuGrouper(Node):
 
     def __init__(self):
-        super().__init__('imu_grouper')
+        super().__init__("imu_grouper")
 
-        self.sample_time = Subscriber(self, TimeReference, '/imu/time_ref')
-        self.angvel = Subscriber(self, Vector3Stamped, '/imu/angular_velocity') # NOTE: why does /filter/twist not publish? --> use angular velocity for now
-        self.quat = Subscriber(self, QuaternionStamped, '/filter/quaternion')
-        self.free_accel = Subscriber(self, Vector3Stamped, '/filter/free_acceleration')
-        self.linear_accel = Subscriber(self, Vector3Stamped, '/imu/acceleration')
+        self.sample_time = Subscriber(self, TimeReference, "/imu/time_ref")
+        self.angvel = Subscriber(
+            self, Vector3Stamped, "/imu/angular_velocity"
+        )  # NOTE: why does /filter/twist not publish? --> use angular velocity for now
+        self.quat = Subscriber(self, QuaternionStamped, "/filter/quaternion")
+        self.free_accel = Subscriber(self, Vector3Stamped, "/filter/free_acceleration")
+        self.linear_accel = Subscriber(self, Vector3Stamped, "/imu/acceleration")
 
-        self.publisher_ = self.create_publisher(Imu, '/imu_synchronized_data', 10)
-        
+        self.publisher_ = self.create_publisher(Imu, "/imu_synchronized_data", 10)
+
         # TimeSynchronizer
-        self.ts = TimeSynchronizer([self.sample_time, self.angvel, self.quat, self.free_accel, self.linear_accel], 10)
+        self.ts = TimeSynchronizer(
+            [
+                self.sample_time,
+                self.angvel,
+                self.quat,
+                self.free_accel,
+                self.linear_accel,
+            ],
+            10,
+        )
         self.ts.registerCallback(self.callback)
 
-        self.get_logger().info(f'Running IMU data synchronization')
-
+        self.get_logger().info(f"Running IMU data synchronization")
 
     def callback(self, sample_time, angvel, quat, free_accel, linear_accel):
         # Bundle the messages into a single synchronized message
@@ -44,8 +55,10 @@ class ImuGrouper(Node):
         imu_synced.rate_of_turn.y = angvel.vector.y
         imu_synced.rate_of_turn.z = angvel.vector.z
 
-        # Convert quaternion to Euler representation 
-        euler = tf_transformations.euler_from_quaternion([quat.quaternion.x, quat.quaternion.y, quat.quaternion.z, quat.quaternion.w])
+        # Convert quaternion to Euler representation
+        euler = tf_transformations.euler_from_quaternion(
+            [quat.quaternion.x, quat.quaternion.y, quat.quaternion.z, quat.quaternion.w]
+        )
         imu_synced.orientation = Vector3()
         imu_synced.orientation.x = euler[0]
         imu_synced.orientation.y = euler[1]
@@ -60,7 +73,7 @@ class ImuGrouper(Node):
         imu_synced.linear_acceleration.x = linear_accel.vector.x
         imu_synced.linear_acceleration.y = linear_accel.vector.y
         imu_synced.linear_acceleration.z = linear_accel.vector.z
-        
+
         # Publish the synchronized message
         self.publisher_.publish(imu_synced)
 
@@ -76,5 +89,5 @@ def main(args=None):
     rclpy.shutdown()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

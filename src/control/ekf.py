@@ -3,8 +3,11 @@ from scipy.linalg import block_diag
 from scipy.spatial.transform import Rotation
 from rclpy.time import Time
 
+
 class EKF:
-    def __init__(self, dvl_offset, initial_process_covariance, initial_measurement_covariances):
+    def __init__(
+        self, dvl_offset, initial_process_covariance, initial_measurement_covariances
+    ):
         self.dvl_offset = dvl_offset
         self.process_covariance = np.diag(initial_process_covariance)
 
@@ -15,9 +18,9 @@ class EKF:
         self.Q = np.diag(initial_process_covariance)  # Process noise covariance matrix
 
         # Measurement noise covariances
-        self.R_imu = np.diag(initial_measurement_covariances['imu'])
-        self.R_dvl = np.diag(initial_measurement_covariances['dvl'])
-        self.R_depth = np.array([[initial_measurement_covariances['depth']]])
+        self.R_imu = np.diag(initial_measurement_covariances["imu"])
+        self.R_dvl = np.diag(initial_measurement_covariances["dvl"])
+        self.R_depth = np.array([[initial_measurement_covariances["depth"]]])
 
         # Buffers for dynamic covariance updates
         self.imu_buffer = []
@@ -40,7 +43,11 @@ class EKF:
 
     def update_measurement_covariance(self, buffer, R, new_measurement):
         # Convert new_measurement to a 2D array if it is a single value
-        new_measurement = np.atleast_2d(new_measurement).T if np.isscalar(new_measurement) else np.atleast_2d(new_measurement)
+        new_measurement = (
+            np.atleast_2d(new_measurement).T
+            if np.isscalar(new_measurement)
+            else np.atleast_2d(new_measurement)
+        )
         buffer.append(new_measurement)
         if len(buffer) > self.max_buffer_size:
             buffer.pop(0)
@@ -50,14 +57,16 @@ class EKF:
             if R.shape == (1, 1):  # Handle scalar case for depth
                 R[0, 0] = updated_R.item()
             else:
-                R[:updated_R.shape[0], :updated_R.shape[1]] = updated_R
+                R[: updated_R.shape[0], : updated_R.shape[1]] = updated_R
 
-    def handle_imu_measurement(self, orientation, linear_acceleration, covariance, timestamp: Time):
+    def handle_imu_measurement(
+        self, orientation, linear_acceleration, covariance, timestamp: Time
+    ):
         # Update orientation state
         self.state[9:12] = orientation
 
         # Convert linear acceleration to global frame
-        R = Rotation.from_euler('xyz', orientation)
+        R = Rotation.from_euler("xyz", orientation)
         global_accel = R.apply(linear_acceleration)
         self.state[6:9] = global_accel
 
@@ -97,9 +106,9 @@ class EKF:
         # Update the DVL measurement covariance dynamically
         self.update_measurement_covariance(self.dvl_buffer, self.R_dvl, velocity)
 
-         # Convert DVL velocity to global frame
+        # Convert DVL velocity to global frame
         orientation = self.state[9:12]
-        R = Rotation.from_euler('xyz', orientation)
+        R = Rotation.from_euler("xyz", orientation)
         global_velocity = R.apply(velocity)
 
         H = np.zeros((3, 15))

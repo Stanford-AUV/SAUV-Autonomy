@@ -27,8 +27,8 @@ def pose_to_np(o: State | Pose):
                 o.orientation.y,
                 o.orientation.z,
             ]
-        
         )
+
 
 def state_to_np(o: State | Pose):
     if isinstance(o, State) or isinstance(o, Pose) or isinstance(o, Wrench):

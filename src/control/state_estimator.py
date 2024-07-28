@@ -25,49 +25,51 @@ from std_msgs.msg import Bool
 from .ekf import EKF
 from geometry_msgs.msg import Vector3
 
+
 @dataclass(order=True)
 class StampedMsg:
     time: float
     msg: Any = field(compare=False)
+
 
 class StateEstimation(Node):
     def __init__(self):
         super().__init__("state_estimator")
 
         self.declare_parameters(
-            namespace='',
+            namespace="",
             parameters=[
-                ('ekf.dt',0.1),
-                ('ekf.horizon_delay',0.04),
-                ('dvl.offset_x',-0.16256),
-                ('dvl.offset_y',0.0),
-                ('dvl.offset_z',0.110236),
-                ('dvl.cov_x',0.0001),
-                ('dvl.cov_y',0.0001),
-                ('dvl.cov_z',0.0001),
-                ('imu.orientation_cov_x',1.218e-5),
-                ('imu.orientation_cov_y',1.218e-5),
-                ('imu.orientation_cov_z',1.218e-5),
-                ('imu.accel_cov_x',1.218e-5),
-                ('imu.accel_cov_y',1.218e-5),
-                ('imu.accel_cov_z',1.218e-5),
-                ('depth.cov_z',7.196207822120195e-06),
-                ('process_cov.position_x',0.01),
-                ('process_cov.position_y',0.01),
-                ('process_cov.position_z',0.01),
-                ('process_cov.linear_vel_x',0.01),
-                ('process_cov.linear_vel_y',0.01),
-                ('process_cov.linear_vel_z',0.01),
-                ('process_cov.linear_accel_x',0.01),
-                ('process_cov.linear_accel_y',0.01),
-                ('process_cov.linear_accel_z',0.01),
-                ('process_cov.angular_position_x',0.01),
-                ('process_cov.angular_position_y',0.01),
-                ('process_cov.angular_position_z',0.01),
-                ('process_cov.angular_vel_x',0.01),
-                ('process_cov.angular_vel_y',0.01),
-                ('process_cov.angular_vel_z',0.01)
-            ]
+                ("ekf.dt", 0.1),
+                ("ekf.horizon_delay", 0.04),
+                ("dvl.offset_x", -0.16256),
+                ("dvl.offset_y", 0.0),
+                ("dvl.offset_z", 0.110236),
+                ("dvl.cov_x", 0.0001),
+                ("dvl.cov_y", 0.0001),
+                ("dvl.cov_z", 0.0001),
+                ("imu.orientation_cov_x", 1.218e-5),
+                ("imu.orientation_cov_y", 1.218e-5),
+                ("imu.orientation_cov_z", 1.218e-5),
+                ("imu.accel_cov_x", 1.218e-5),
+                ("imu.accel_cov_y", 1.218e-5),
+                ("imu.accel_cov_z", 1.218e-5),
+                ("depth.cov_z", 7.196207822120195e-06),
+                ("process_cov.position_x", 0.01),
+                ("process_cov.position_y", 0.01),
+                ("process_cov.position_z", 0.01),
+                ("process_cov.linear_vel_x", 0.01),
+                ("process_cov.linear_vel_y", 0.01),
+                ("process_cov.linear_vel_z", 0.01),
+                ("process_cov.linear_accel_x", 0.01),
+                ("process_cov.linear_accel_y", 0.01),
+                ("process_cov.linear_accel_z", 0.01),
+                ("process_cov.angular_position_x", 0.01),
+                ("process_cov.angular_position_y", 0.01),
+                ("process_cov.angular_position_z", 0.01),
+                ("process_cov.angular_vel_x", 0.01),
+                ("process_cov.angular_vel_y", 0.01),
+                ("process_cov.angular_vel_z", 0.01),
+            ],
         )
 
         self._initialized = False
@@ -76,49 +78,78 @@ class StateEstimation(Node):
         qos_profile = QoSProfile(depth=10)
 
         self._state_pub = self.create_publisher(StateMsg, "state", qos_profile)
-        self._pose_pub = self.create_publisher(PoseStamped, "visualizable_state", qos_profile)
-        
+        self._pose_pub = self.create_publisher(
+            PoseStamped, "visualizable_state", qos_profile
+        )
 
         self._sensor_sync_sub = self.create_subscription(
             SensorSync, "/IDD_synchronized_data", self._receive_msg, qos_profile
         )
 
-        self._dt = Duration(seconds=self.get_parameter('ekf.dt').value)  
-        self._horizon_delay = Duration(seconds=self.get_parameter('ekf.horizon_delay').value)  
+        self._dt = Duration(seconds=self.get_parameter("ekf.dt").value)
+        self._horizon_delay = Duration(
+            seconds=self.get_parameter("ekf.horizon_delay").value
+        )
 
-        dvl_offset = np.array([self.get_parameter('dvl.offset_x').value, self.get_parameter('dvl.offset_y').value, self.get_parameter('dvl.offset_z').value]) 
+        dvl_offset = np.array(
+            [
+                self.get_parameter("dvl.offset_x").value,
+                self.get_parameter("dvl.offset_y").value,
+                self.get_parameter("dvl.offset_z").value,
+            ]
+        )
         process_covariance = np.array(
             [
-                self.get_parameter('process_cov.position_x').value,
-                self.get_parameter('process_cov.position_y').value,
-                self.get_parameter('process_cov.position_z').value,
-                self.get_parameter('process_cov.linear_vel_x').value,
-                self.get_parameter('process_cov.linear_vel_y').value,
-                self.get_parameter('process_cov.linear_vel_z').value,
-                self.get_parameter('process_cov.linear_accel_x').value,
-                self.get_parameter('process_cov.linear_accel_y').value,
-                self.get_parameter('process_cov.linear_accel_z').value,
-                self.get_parameter('process_cov.angular_position_x').value,
-                self.get_parameter('process_cov.angular_position_y').value,
-                self.get_parameter('process_cov.angular_position_z').value,
-                self.get_parameter('process_cov.angular_vel_x').value,
-                self.get_parameter('process_cov.angular_vel_y').value,
-                self.get_parameter('process_cov.angular_vel_z').value,
+                self.get_parameter("process_cov.position_x").value,
+                self.get_parameter("process_cov.position_y").value,
+                self.get_parameter("process_cov.position_z").value,
+                self.get_parameter("process_cov.linear_vel_x").value,
+                self.get_parameter("process_cov.linear_vel_y").value,
+                self.get_parameter("process_cov.linear_vel_z").value,
+                self.get_parameter("process_cov.linear_accel_x").value,
+                self.get_parameter("process_cov.linear_accel_y").value,
+                self.get_parameter("process_cov.linear_accel_z").value,
+                self.get_parameter("process_cov.angular_position_x").value,
+                self.get_parameter("process_cov.angular_position_y").value,
+                self.get_parameter("process_cov.angular_position_z").value,
+                self.get_parameter("process_cov.angular_vel_x").value,
+                self.get_parameter("process_cov.angular_vel_y").value,
+                self.get_parameter("process_cov.angular_vel_z").value,
             ]
-        ) 
+        )
 
         # Initialization parameters in StateEstimation class
-        # NOTE: orientation covariance: 0.2 deg RMS --> 1.218e-5 
-        self._imu_covariance = np.array([self.get_parameter('imu.orientation_cov_x').value, self.get_parameter('imu.orientation_cov_y').value, self.get_parameter('imu.orientation_cov_z').value, 
-                                         self.get_parameter('imu.accel_cov_x').value, self.get_parameter('imu.accel_cov_y').value, self.get_parameter('imu.accel_cov_z').value])  # Adjust based on your IMU specifications
-        self._dvl_covariance = np.array([self.get_parameter('dvl.cov_x').value, self.get_parameter('dvl.cov_y').value, self.get_parameter('dvl.cov_z').value]) 
-        self._depth_covariance = np.array([self.get_parameter('depth.cov_z').value])  # Adjust based on your depth sensor specifications
+        # NOTE: orientation covariance: 0.2 deg RMS --> 1.218e-5
+        self._imu_covariance = np.array(
+            [
+                self.get_parameter("imu.orientation_cov_x").value,
+                self.get_parameter("imu.orientation_cov_y").value,
+                self.get_parameter("imu.orientation_cov_z").value,
+                self.get_parameter("imu.accel_cov_x").value,
+                self.get_parameter("imu.accel_cov_y").value,
+                self.get_parameter("imu.accel_cov_z").value,
+            ]
+        )  # Adjust based on your IMU specifications
+        self._dvl_covariance = np.array(
+            [
+                self.get_parameter("dvl.cov_x").value,
+                self.get_parameter("dvl.cov_y").value,
+                self.get_parameter("dvl.cov_z").value,
+            ]
+        )
+        self._depth_covariance = np.array(
+            [self.get_parameter("depth.cov_z").value]
+        )  # Adjust based on your depth sensor specifications
 
-        self._ekf = EKF(dvl_offset, process_covariance, {
-            'imu': self._imu_covariance,
-            'dvl': self._dvl_covariance,
-            'depth': self._depth_covariance[0]
-        })
+        self._ekf = EKF(
+            dvl_offset,
+            process_covariance,
+            {
+                "imu": self._imu_covariance,
+                "dvl": self._dvl_covariance,
+                "depth": self._depth_covariance[0],
+            },
+        )
         self._msg_queue = PriorityQueue()
 
         current_time = self.get_clock().now()
@@ -145,7 +176,7 @@ class StateEstimation(Node):
         msg_time = Time(
             seconds=msg.header.stamp.sec,
             nanoseconds=msg.header.stamp.nanosec,
-            clock_type=current_time.clock_type
+            clock_type=current_time.clock_type,
         )
 
         if self.initial_time_offset is None:
@@ -154,7 +185,10 @@ class StateEstimation(Node):
         adjusted_stamp = msg_time + self.initial_time_offset
 
         # Use seconds_nanoseconds() method to get the seconds part
-        if adjusted_stamp.seconds_nanoseconds()[0] < self._last_horizon_time.seconds_nanoseconds()[0]:
+        if (
+            adjusted_stamp.seconds_nanoseconds()[0]
+            < self._last_horizon_time.seconds_nanoseconds()[0]
+        ):
             return
 
         stamped_msg = StampedMsg(adjusted_stamp.nanoseconds, msg)
@@ -206,17 +240,17 @@ class StateEstimation(Node):
         )
 
         # Extract orientation directly as Euler angles
-        orientation = np.array([
-            imu_data.orientation.x,
-            imu_data.orientation.y,
-            imu_data.orientation.z
-        ])
+        orientation = np.array(
+            [imu_data.orientation.x, imu_data.orientation.y, imu_data.orientation.z]
+        )
 
-        linear_acceleration = np.array([
-            imu_data.free_acceleration.x,
-            imu_data.free_acceleration.y,
-            imu_data.free_acceleration.z
-        ])
+        linear_acceleration = np.array(
+            [
+                imu_data.free_acceleration.x,
+                imu_data.free_acceleration.y,
+                imu_data.free_acceleration.z,
+            ]
+        )
 
         # self.get_logger().info(
         #     f"IMU ACC: {linear_acceleration[0]:.2f} {linear_acceleration[1]:.2f} {linear_acceleration[2]:.2f}"
@@ -235,11 +269,7 @@ class StateEstimation(Node):
 
         timestamp = self.get_clock().now()  # Using current time, adjust if needed
 
-        velocity = np.array([
-            dvl_data.linear.x,
-            dvl_data.linear.y,
-            dvl_data.linear.z
-        ])
+        velocity = np.array([dvl_data.linear.x, dvl_data.linear.y, dvl_data.linear.z])
         # self.get_logger().info(
         #     f"DVL VEL: {velocity[0]:.2f} {velocity[1]:.2f} {velocity[2]:.2f}"
         # )
@@ -276,12 +306,16 @@ class StateEstimation(Node):
         # Convert numpy arrays to ROS messages
         state_msg.position = Vector3(x=-position[0], y=position[1], z=position[2])
         state_msg.linear_velocity = Vector3(x=velocity[0], y=velocity[1], z=velocity[2])
-        state_msg.linear_acceleration = Vector3(x=acceleration[0], y=acceleration[1], z=acceleration[2])
+        state_msg.linear_acceleration = Vector3(
+            x=acceleration[0], y=acceleration[1], z=acceleration[2]
+        )
 
-        state_msg.orientation_euler = Vector3(x=-orientation[0], y=-orientation[1], z=-orientation[2])
+        state_msg.orientation_euler = Vector3(
+            x=-orientation[0], y=-orientation[1], z=-orientation[2]
+        )
 
         # Convert orientation (Euler angles) to quaternion
-        quaternion = Rotation.from_euler('xyz', orientation).as_quat()
+        quaternion = Rotation.from_euler("xyz", orientation).as_quat()
         state_msg.orientation.x = -quaternion[0]
         state_msg.orientation.y = -quaternion[1]
         state_msg.orientation.z = -quaternion[2]
@@ -289,7 +323,7 @@ class StateEstimation(Node):
 
         # Convert angular velocity to quaternion representation
         # CURRENTLY NOT PUBLISHED!!!! MAY NEED TO BE UPDATED TO REFLECT ANGLE REFLECTION SEE ABOVE ^^
-        angular_velocity_quat = Rotation.from_euler('xyz', angular_velocity).as_quat()
+        angular_velocity_quat = Rotation.from_euler("xyz", angular_velocity).as_quat()
         state_msg.angular_velocity.x = angular_velocity_quat[0]
         state_msg.angular_velocity.y = angular_velocity_quat[1]
         state_msg.angular_velocity.z = angular_velocity_quat[2]
@@ -300,7 +334,7 @@ class StateEstimation(Node):
 
         pose_msg = PoseStamped()
         pose_msg.header.stamp = time.to_msg()
-        pose_msg.header.frame_id = 'map'  # Adjust as necessary
+        pose_msg.header.frame_id = "map"  # Adjust as necessary
         pose_msg.pose.position.x = -position[0]
         pose_msg.pose.position.y = position[1]
         pose_msg.pose.position.z = position[2]

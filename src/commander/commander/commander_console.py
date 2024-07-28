@@ -2,7 +2,7 @@ import sys
 import threading
 import rclpy
 
-if sys.platform == 'win32':
+if sys.platform == "win32":
     import msvcrt
 else:
     import termios
@@ -21,25 +21,29 @@ g - Enable motor thrust
 CTRL-C to quit
 """
 
+
 class CommanderNode(Node):
     def __init__(self):
-        super().__init__('commander_console')
+        super().__init__("commander_console")
 
-        self.cli = self.create_client(MotorEnable, 'motor_enable')
+        self.cli = self.create_client(MotorEnable, "motor_enable")
         while not self.cli.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('MotorEnable (Arduino node) service not available, waiting again...')
+            self.get_logger().info(
+                "MotorEnable (Arduino node) service not available, waiting again..."
+            )
         self.motor_req = MotorEnable.Request()
-        self.get_logger().info('MotorEnable (Arduino node) service available!')
+        self.get_logger().info("MotorEnable (Arduino node) service available!")
 
-        self.get_logger().info(msg) # after all services are connected, display message
+        self.get_logger().info(msg)  # after all services are connected, display message
 
     def send_motor_enable_request(self, enable):
         self.motor_req.enable = enable
         self.future = self.cli.call_async(self.motor_req)
         return self.future
 
+
 def getKey(settings):
-    if sys.platform == 'win32':
+    if sys.platform == "win32":
         # getwch() returns a string on Windows
         key = msvcrt.getwch()
     else:
@@ -49,15 +53,18 @@ def getKey(settings):
         termios.tcsetattr(sys.stdin, termios.TCSADRAIN, settings)
     return key
 
+
 def saveTerminalSettings():
-    if sys.platform == 'win32':
+    if sys.platform == "win32":
         return None
     return termios.tcgetattr(sys.stdin)
 
+
 def restoreTerminalSettings(old_settings):
-    if sys.platform == 'win32':
+    if sys.platform == "win32":
         return
     termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
+
 
 def main():
     settings = saveTerminalSettings()
@@ -69,25 +76,25 @@ def main():
     try:
         while rclpy.ok():
             key = getKey(settings)
-            if key == "x" or key == "X": # disable thrust
+            if key == "x" or key == "X":  # disable thrust
                 future = cmd_node.send_motor_enable_request(enable=False)
                 rclpy.spin_until_future_complete(cmd_node, future)
                 response = future.result()
-                cmd_node.get_logger().info(f'Motor disabled: {response.success}')
-            elif key == "g": # enable thrust
+                cmd_node.get_logger().info(f"Motor disabled: {response.success}")
+            elif key == "g":  # enable thrust
                 future = cmd_node.send_motor_enable_request(enable=True)
                 rclpy.spin_until_future_complete(cmd_node, future)
                 response = future.result()
-                cmd_node.get_logger().info(f'Motor enabled: {response.success}')
+                cmd_node.get_logger().info(f"Motor enabled: {response.success}")
             # elif key == " ": # pause state estimator, controller, and motor
-                # stuff
+            # stuff
             # elif key == "r": # reset state estimator to initial state
-                # stuff
+            # stuff
             # elif key == "c": # reset controller (mainly, integral error)
-                # stuff
-            
+            # stuff
+
             else:
-                if key == '\x03':
+                if key == "\x03":
                     break
 
             # Spin once to process other callbacks
@@ -101,5 +108,6 @@ def main():
         rclpy.shutdown()
         restoreTerminalSettings(settings)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

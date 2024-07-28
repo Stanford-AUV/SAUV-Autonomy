@@ -99,13 +99,14 @@ class Controller(Node):
             max_vel = 1.0
             max_acc = 0.5
             dt = 0.1
-            
+
             """
             self.motion_profiles = [
                 TrapezoidalMotionProfile(self.pose[i], self.desired[i], max_vel, max_acc, dt)
                 for i in range(self.dim_)
             ]
             """
+
     def normalize_angle(self, angle):
         """Normalize the angle to be within the range of [-π, π]."""
         while angle > math.pi:
@@ -116,7 +117,9 @@ class Controller(Node):
 
     def find_closest_angle(self, cur_error):
         """Find closest angle, handling pi -> -pi wrapping"""
-        cur_error = self.normalize_angle(self.normalize_angle(self.desired[5]) - self.normalize_angle(self.pose[5])) 
+        cur_error = self.normalize_angle(
+            self.normalize_angle(self.desired[5]) - self.normalize_angle(self.pose[5])
+        )
         sign = 1 if cur_error > 0 else -1
         wrapped_error = 2 * np.pi - np.abs(cur_error)
 
@@ -124,7 +127,7 @@ class Controller(Node):
             error = -1 * sign * wrapped_error
         else:
             error = cur_error
-        
+
         return error
 
     def update(self):
@@ -150,10 +153,10 @@ class Controller(Node):
                 self.pids[i].setpoint = self.normalize_angle(self.desired[i])
                 if i == 5:
                     self.pids[i].error_map = self.find_closest_angle
-        
+
         # Wrench in global frame
         global_wrench = np.array([pid(self.pose[i]) for i, pid in enumerate(self.pids)])
-        
+
         # Convert wrench to local frame
         current_orientation = self.pose[3:]
         rotation_matrix = R.from_euler("xyz", -current_orientation).as_matrix()
@@ -189,19 +192,22 @@ class Controller(Node):
                 pid.reset()
                 pid.set_auto_mode(True, last_output=start_i)
 
+
 def main(args=None):
     rclpy.init(args=args)
 
     # Initialize controller gains
     #                      x, y, z, r, p, y
 
-    with open('/home/selenas/SAUV/SAUV-Autonomy/src/control/data/pid_gains.json', 'r') as f:
+    with open(
+        "/home/selenas/SAUV/SAUV-Autonomy/src/control/data/pid_gains.json", "r"
+    ) as f:
         pid_gains = json.load(f)
 
-    kP = np.array(pid_gains['kP'])
-    kD = np.array(pid_gains['kD'])
-    kI = np.array(pid_gains['kI'])
-    start_I = np.array(pid_gains['start_I'])
+    kP = np.array(pid_gains["kP"])
+    kD = np.array(pid_gains["kD"])
+    kI = np.array(pid_gains["kI"])
+    start_I = np.array(pid_gains["start_I"])
 
     controller_node = Controller(kP, kD, kI, start_I)
 
