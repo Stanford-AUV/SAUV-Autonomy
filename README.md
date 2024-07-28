@@ -33,6 +33,7 @@ Update from initial instructions: Make sure to select in your VM more storage th
 
 Make sure to use VSCode. Install all the extensions mentioned in the `.vscode/extensions.json` file.
 In every new Terminal, run:
+
 ```bash
 source /opt/ros/humble/setup.bash
 export PYTHONPATH=${PYTHONPATH}:$PWD/src
@@ -41,9 +42,11 @@ export PYTHONPATH=${PYTHONPATH}:$PWD/src
 ## Gazebo Simulator
 
 To use the Gazebo simulator, follow these steps:
+
 1. Open a Terminal in the VM (not in VSCode! a GUI is necessary for this).
 2. Run the commands from the [Development](#development) section.
 3. Run the following command:
+
 ```bash
 bash gazebo.sh
 ```
@@ -51,6 +54,7 @@ bash gazebo.sh
 All topics exposed from Gazebo to ROS are located in `gazebo_bridge.yaml`.
 
 To test manually, avoid using Gazebo commands directly. Always prefer going through the bridge. For example, to manually set thrust:
+
 ```bash
 ros2 topic pub gz/thruster_1 std_msgs/Float64 "data: -15"
 ```
@@ -58,10 +62,13 @@ ros2 topic pub gz/thruster_1 std_msgs/Float64 "data: -15"
 # Building
 
 First, make sure you have all the dependencies:
+
 ```bash
 rosdep install -i --from-path src --rosdistro humble -y
 ```
+
 To build the code, please run the following:
+
 ```bash
 colcon build && source install/setup.bash
 ```
@@ -69,10 +76,13 @@ colcon build && source install/setup.bash
 # Running
 
 To run a ROS node, please run the following:
+
 ```bash
 ros2 run MODULE_NAME NODE_NAME
 ```
+
 For example:
+
 ```bash
 ros2 run control thruster_manager
 ```
@@ -80,18 +90,25 @@ ros2 run control thruster_manager
 # Testing
 
 To run tests, use the `unittest` module like so:
+
 ```bash
 python3 -m unittest MODULE_NAME.tests.TEST_CLASS_NAME
 ```
+
 For example:
+
 ```bash
 python3 -m unittest control.tests.TestEKF
 ```
+
 You can also run specific tests using:
+
 ```bash
 python3 -m unittest MODULE_NAME.tests.TEST_CLASS_NAME.TEST_NAME
 ```
+
 For example:
+
 ```bash
 python3 -m unittest control.tests.TestEKF.test_initial_state
 ```
@@ -99,24 +116,34 @@ python3 -m unittest control.tests.TestEKF.test_initial_state
 # Remote Control
 
 Make sure you have permissions to read from the joystick by first typing:
+
 ```bash
 lsusb
 ```
+
 Then read the ID for the Gamepad, something like `046d:c21d`. The first number is the VID and the second number is the PID.
+
 ```bash
 sudo nano /etc/udev/rules.d/80-joystick.rules
 ```
+
 Then enter:
+
 ```
 SUBSYSTEM=="usb", ATTRS{idVendor}=="VID", ATTRS{idProduct}=="PID", MODE="0666"
 ```
+
 Replacing the VID and PID with the values found above.
 After saving the above file, reload the rules by typing:
+
 ```bash
 sudo udevadm control --reload-rules
 ```
+
 Then unplug and replug the Joystick. Make sure to select `Connect to Linux` on the VM.
 
 Run the joystick code with the joystick plugged-in through USB:
+
 ```bash
 python src/control/remote.py --record
+```

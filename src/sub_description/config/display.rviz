@@ -143,17 +143,13 @@ Visualization Manager:
       Tree:
         base_link:
           back_motor_right_2:
-            back_wheel_right_2:
-              {}
+            back_wheel_right_2: {}
           back_wheel_left_2:
-            back_motor_left_2:
-              {}
+            back_motor_left_2: {}
           front_motor_left_2:
-            front_wheel_left_2:
-              {}
+            front_wheel_left_2: {}
           front_motor_right_2:
-            front_wheel_right_2:
-              {}
+            front_wheel_right_2: {}
       Update Interval: 0
       Value: true
   Enabled: true

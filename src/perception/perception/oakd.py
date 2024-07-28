@@ -2,18 +2,23 @@ import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image
 
+
 class OakDSubscriber(Node):
 
     def __init__(self):
-        super().__init__('oakd_subscriber')
-        self.rgb_subscription_ = self.create_subscription(Image, 'oak/rgb/image_raw', self.rgb_callback, 10)
-        self.stereo_subscription_ = self.create_subscription(Image, 'oak/stereo/image_raw', self.stereo_callback, 10)
+        super().__init__("oakd_subscriber")
+        self.rgb_subscription_ = self.create_subscription(
+            Image, "oak/rgb/image_raw", self.rgb_callback, 10
+        )
+        self.stereo_subscription_ = self.create_subscription(
+            Image, "oak/stereo/image_raw", self.stereo_callback, 10
+        )
 
     def rgb_callback(self, msg):
-        self.get_logger().info('Subscribed to RGB')
+        self.get_logger().info("Subscribed to RGB")
 
     def stereo_callback(self, msg):
-        self.get_logger().info('Subscribed to stereo')
+        self.get_logger().info("Subscribed to stereo")
 
 
 def main(args=None):
@@ -28,5 +33,5 @@ def main(args=None):
     rclpy.shutdown()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

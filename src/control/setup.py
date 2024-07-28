@@ -11,7 +11,7 @@ setup(
     data_files=[
         ("share/ament_index/resource_index/packages", ["resource/" + package_name]),
         ("share/" + package_name, ["package.xml"]),
-        (os.path.join('share', package_name, 'launch'), glob('launch/*.py')),
+        (os.path.join("share", package_name, "launch"), glob("launch/*.py")),
     ],
     install_requires=["setuptools"],
     zip_safe=True,
@@ -29,7 +29,7 @@ setup(
             f"joystick = {package_name}.joystick:main",
             f"forward_publisher = {package_name}.forward_publisher:main",
             f"imu_noise_estimator = {package_name}.imu_noise_estimator:main",
-            f"keyboardcontrol = {package_name}.keyboardcontrol:main"
+            f"keyboardcontrol = {package_name}.keyboardcontrol:main",
         ],
     },
 )
