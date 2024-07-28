@@ -7,12 +7,13 @@ from sensor_msgs.msg import Imu
 class IMU(Node):
 
     def __init__(self):
-        super().__init__('imu')
+        super().__init__("imu")
         self.subscription = self.create_subscription(
-            MTi200Data, # TODO make sure data type makes sense
-            '/imu/data',
+            MTi200Data,  # TODO make sure data type makes sense
+            "/imu/data",
             self.listener_callback,
-            10)
+            10,
+        )
         self.subscription  # prevent unused variable warning
 
     def listener_callback(self, msg):
@@ -30,5 +31,5 @@ def main(args=None):
     rclpy.shutdown()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

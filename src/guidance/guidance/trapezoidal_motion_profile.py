@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class TrapezoidalMotionProfile:
     def __init__(self, start, end, max_vel, max_acc, dt):
         self.start = start
@@ -15,7 +16,7 @@ class TrapezoidalMotionProfile:
         distance = np.abs(distance)
 
         t_acc = self.max_vel / self.max_acc
-        d_acc = 0.5 * self.max_acc * t_acc ** 2
+        d_acc = 0.5 * self.max_acc * t_acc**2
 
         if 2 * d_acc < distance:
             t_cruise = (distance - 2 * d_acc) / self.max_vel
@@ -30,12 +31,12 @@ class TrapezoidalMotionProfile:
 
         for t in times:
             if t < t_acc:
-                pos = self.start + 0.5 * self.max_acc * t ** 2 * sign
+                pos = self.start + 0.5 * self.max_acc * t**2 * sign
             elif t < t_acc + t_cruise:
                 pos = self.start + (d_acc + self.max_vel * (t - t_acc)) * sign
             else:
                 t_dec = t - t_acc - t_cruise
-                pos = self.end - 0.5 * self.max_acc * t_dec ** 2 * sign
+                pos = self.end - 0.5 * self.max_acc * t_dec**2 * sign
             positions.append(pos)
 
         return np.array(positions), times

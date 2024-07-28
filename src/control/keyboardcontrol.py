@@ -1,5 +1,5 @@
 # Modified for SAUV.
-# 
+#
 # Copyright 2011 Brown University Robotics.
 # Copyright 2017 Open Source Robotics Foundation, Inc.
 # All rights reserved.
@@ -39,7 +39,7 @@ import threading
 from msgs.msg import Wrench
 import rclpy
 
-if sys.platform == 'win32':
+if sys.platform == "win32":
     import msvcrt
 else:
     import termios
@@ -74,41 +74,41 @@ CTRL-C to quit
 """
 
 moveBindings = {
-    'i': (-1, 0, 0, 0, 0, 0),
-    'o': (1, 0, 0, 0, 0, -1),
-    'j': (0, 0, 0, 0, 0, 1),
-    'l': (0, 0, 0, 0, 0, -1),
-    'u': (1, 0, 0, 0, 0, 1),
-    ',': (1, 0, 0, 0, 0, 0),
-    '.': (-1, 0, 0, 0, 0, 1),
-    'm': (-1, 0, 0, 0, 0, -1),
-    'O': (1, -1, 0, 0, 0, 0),
-    'I': (1, 0, 0, 0, 0, 0),
-    'J': (0, 1, 0, 0, 0, 0),
-    'L': (0, -1, 0, 0, 0, 0),
-    'U': (1, 1, 0, 0, 0, 0),
-    '<': (-1, 0, 0, 0, 0, 0),
-    '>': (-1, -1, 0, 0, 0, 0),
-    'M': (-1, 1, 0, 0, 0, 0),
-    't': (0, 0, -1, 0, 0, 0),
-    'b': (0, 0, 1, 0, 0, 0),
+    "i": (-1, 0, 0, 0, 0, 0),
+    "o": (1, 0, 0, 0, 0, -1),
+    "j": (0, 0, 0, 0, 0, 1),
+    "l": (0, 0, 0, 0, 0, -1),
+    "u": (1, 0, 0, 0, 0, 1),
+    ",": (1, 0, 0, 0, 0, 0),
+    ".": (-1, 0, 0, 0, 0, 1),
+    "m": (-1, 0, 0, 0, 0, -1),
+    "O": (1, -1, 0, 0, 0, 0),
+    "I": (1, 0, 0, 0, 0, 0),
+    "J": (0, 1, 0, 0, 0, 0),
+    "L": (0, -1, 0, 0, 0, 0),
+    "U": (1, 1, 0, 0, 0, 0),
+    "<": (-1, 0, 0, 0, 0, 0),
+    ">": (-1, -1, 0, 0, 0, 0),
+    "M": (-1, 1, 0, 0, 0, 0),
+    "t": (0, 0, -1, 0, 0, 0),
+    "b": (0, 0, 1, 0, 0, 0),
 }
 
 forceBindings = {
-    'q': 1.1,
-    'z': 0.9,
-    'w': 1.1,
-    'x': 0.9,
+    "q": 1.1,
+    "z": 0.9,
+    "w": 1.1,
+    "x": 0.9,
 }
 
 torqueBindings = {
-    'e': 1.1,
-    'c': 0.9,
+    "e": 1.1,
+    "c": 0.9,
 }
 
 
 def getKey(settings):
-    if sys.platform == 'win32':
+    if sys.platform == "win32":
         # getwch() returns a string on Windows
         key = msvcrt.getwch()
     else:
@@ -120,19 +120,19 @@ def getKey(settings):
 
 
 def saveTerminalSettings():
-    if sys.platform == 'win32':
+    if sys.platform == "win32":
         return None
     return termios.tcgetattr(sys.stdin)
 
 
 def restoreTerminalSettings(old_settings):
-    if sys.platform == 'win32':
+    if sys.platform == "win32":
         return
     termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
 
 
 def forces(force, torque):
-    return 'currently:\tforce %s\ttorque %s ' % (force, torque)
+    return "currently:\tforce %s\ttorque %s " % (force, torque)
 
 
 def main():
@@ -140,17 +140,17 @@ def main():
 
     rclpy.init()
 
-    node = rclpy.create_node('keyboardcontrol')
+    node = rclpy.create_node("keyboardcontrol")
 
     # parameters
-    stamped = node.declare_parameter('stamped', False).value
-    frame_id = node.declare_parameter('frame_id', '').value
+    stamped = node.declare_parameter("stamped", False).value
+    frame_id = node.declare_parameter("frame_id", "").value
     if not stamped and frame_id:
         raise Exception("'frame_id' can only be set when 'stamped' is True")
 
     WrenchMsg = Wrench
 
-    pub = node.create_publisher(WrenchMsg, 'desired_wrench', 10)
+    pub = node.create_publisher(WrenchMsg, "desired_wrench", 10)
 
     spinner = threading.Thread(target=rclpy.spin, args=(node,))
     spinner.start()
@@ -199,7 +199,7 @@ def main():
                 y = 0.0
                 z = 0.0
                 th = 0.0
-                if key == '\x03':
+                if key == "\x03":
                     break
 
             if stamped:
@@ -233,5 +233,5 @@ def main():
         restoreTerminalSettings(settings)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
