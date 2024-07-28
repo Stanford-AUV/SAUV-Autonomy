@@ -22,7 +22,7 @@ from geometry_msgs.msg import Twist
 from geometry_msgs.msg import PoseStamped
 from std_msgs.msg import Bool
 
-from .ekf import EKF
+from control.ekf_sub import SubEKF
 from geometry_msgs.msg import Vector3
 
 
@@ -141,8 +141,8 @@ class StateEstimation(Node):
             [self.get_parameter("depth.cov_z").value]
         )  # Adjust based on your depth sensor specifications
 
-        self._ekf = EKF(
-            dvl_offset,
+        self._ekf = SubEKF(
+            np.eye(15),
             process_covariance,
             {
                 "imu": self._imu_covariance,
