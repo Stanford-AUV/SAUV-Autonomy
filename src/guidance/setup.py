@@ -18,6 +18,6 @@ setup(
     license="TODO: License declaration",
     tests_require=["pytest"],
     entry_points={
-        "console_scripts": ["waypoints = guidance.waypoints:main"],
+        "console_scripts": ["manual_waypoints = guidance.manual_waypoints:main"],
     },
 )
