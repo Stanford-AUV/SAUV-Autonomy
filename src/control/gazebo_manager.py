@@ -72,10 +72,7 @@ class GazeboManager(Node):
         state.position = Vector3(
             x=msg.pose.position.x, y=msg.pose.position.y, z=msg.pose.position.z
         )
-        orientation = Rotation.from_quat(to_np(msg.pose.orientation)).as_euler("xyz")
-        state.orientation = Vector3(
-            x=orientation[0], y=orientation[1], z=orientation[2]
-        )
+        state.orientation = msg.pose.orientation
         self.get_logger().info(f"Publishing state: {state}")
         self._state_pub.publish(state)
 

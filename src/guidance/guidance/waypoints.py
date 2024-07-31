@@ -7,6 +7,7 @@ from msgs.msg import Pose, State, Wrench
 from geometry_msgs.msg import Vector3
 from std_msgs.msg import Header
 from control.utils import pose_to_np, state_to_np, wrench_to_np
+from pathlib import Path
 
 
 class CheckpointManager(Node):
@@ -14,9 +15,8 @@ class CheckpointManager(Node):
     def __init__(self):
         super().__init__("waypoints")
 
-        with open(
-            "/home/selenas/SAUV/SAUV-Autonomy/src/guidance/data/waypoints.json", "r"
-        ) as f:  # orin filepath
+        path = Path.cwd() / "src" / "guidance" / "data" / "waypoints.json"
+        with open(path, "r") as f:
             waypoints = json.load(f)
         self._checkpoints = np.array(waypoints, dtype=np.float64)
         self._checkpoints_index = 0
