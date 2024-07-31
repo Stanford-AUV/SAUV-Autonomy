@@ -8,10 +8,10 @@ from msgs.msg import Pose, State, Wrench
 from geometry_msgs.msg import Vector3
 from simple_pid import PID
 from scipy.spatial.transform import Rotation as R
-from guidance.trapezoidal_motion_profile import TrapezoidalMotionProfile
 import json
 import math
 from control.utils import pose_to_np, state_to_np
+from pathlib import Path
 
 
 class Controller(Node):
@@ -199,9 +199,8 @@ def main(args=None):
     # Initialize controller gains
     #                      x, y, z, r, p, y
 
-    with open(
-        "/home/selenas/SAUV/SAUV-Autonomy/src/control/data/pid_gains.json", "r"
-    ) as f:
+    path = Path.cwd() / "src" / "control" / "data" / "pid_gains.json"
+    with open(path, "r") as f:
         pid_gains = json.load(f)
 
     kP = np.array(pid_gains["kP"])
