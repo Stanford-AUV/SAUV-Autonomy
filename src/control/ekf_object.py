@@ -33,4 +33,4 @@ class ObjectEKF(EKF):
         position = self.state[0:3]
         velocity = self.state[3:6]
 
-        return position, velocity
+        return position, velocity, self.P
