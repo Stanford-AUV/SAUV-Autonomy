@@ -90,9 +90,9 @@ class ObjectMapperNode(LifecycleNode):
         self._synchronizer.registerCallback(self.detections_cb)
 
     def create_publishers(self):
-        self._buoy_position_pub = self.create_publisher(MarkerArray, "buoy_position_topic", 10)
-        self._red_arrow_pub = self.create_publisher(MarkerArray, "red_arrow_topic", 10)
-        self._blue_arrow_pub = self.create_publisher(MarkerArray, "blue_arrow_topic", 10)
+        self._buoy_position_pub = self.create_publisher(Object, "buoy_position_topic", 10)
+        self._red_arrow_pub = self.create_publisher(Object, "red_arrow_topic", 10)
+        self._blue_arrow_pub = self.create_publisher(Object, "blue_arrow_topic", 10)
 
     def on_deactivate(self, state: LifecycleState) -> TransitionCallbackReturn:
         self.get_logger().info(f"Deactivating {self.get_name()}")
