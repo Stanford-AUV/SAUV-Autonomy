@@ -92,10 +92,18 @@ class DvlPublisher : public rclcpp::Node
             "TE00:00:00.00\r", // ping time is as fast as possible
             "BX00120\r",       // ensure max ping range (12m)
             "EA+04500\r",      // heading alignment of the DVL
+            "ES00\r",           // set salinity to 0 PPM
             "CK\r",            // save configuration
             "CS\r",           // begin reading
         };
         const size_t num_commands = sizeof(config_commands) / sizeof(config_commands[0]);
+
+         // send a serial break of 0.3 seconds
+        if (tcsendbreak(fd_, 3) < 0) {
+            RCLCPP_ERROR(this->get_logger(), "Failed to send serial break");
+        } else {
+            RCLCPP_INFO(this->get_logger(), "Serial break sent successfully");
+        }
 
         for (size_t i = 0; i < num_commands; ++i) {
             int bytes_written = write(fd_, config_commands[i], strlen(config_commands[i]));
@@ -148,6 +156,7 @@ class DvlPublisher : public rclcpp::Node
             }
 
             geometry_msgs::msg::TwistStamped velMessage; // NOTE: not sure what the order or meaning of the four means are!
+            velMessage.header.frame_id = "dvl_link";
             velMessage.header.stamp = this->now();
             velMessage.twist.linear.x = velArray[0];
             velMessage.twist.linear.y = velArray[1];
