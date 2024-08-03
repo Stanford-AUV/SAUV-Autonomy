@@ -3,7 +3,8 @@ from rclpy.node import Node
 import numpy as np
 import math
 import json
-from msgs.msg import Pose, State, Wrench
+from msgs.msg import Pose, Wrench
+from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Vector3
 from std_msgs.msg import Header
 from control.utils import pose_to_np, state_to_np, wrench_to_np
@@ -21,15 +22,12 @@ class CheckpointManager(Node):
         self._checkpoints_index = 0
         self._desired_pose = self._checkpoints[self._checkpoints_index]
         self._desired_pose_pub = self.create_publisher(Pose, "desired_pose", 10)
-        self._desired_wrench_sub = self.create_subscription(
-            Wrench, "desired_wrench", self.wrench_callback, 10
-        )
 
         self.dim_ = 6
         self.wrench = np.zeros(self.dim_)
         self.pose = np.zeros(self.dim_)
         self._current_state_sub = self.create_subscription(
-            State, "state", self.current_state_callback, 10
+            Odometry, "state", self.current_state_callback, 10
         )
 
         timer_period = 0.1  # TODO: Don't hardcode this
@@ -80,8 +78,8 @@ class CheckpointManager(Node):
         # msg.data = pwm
         self._desired_pose_pub.publish(msg)
 
-    def current_state_callback(self, msg: State):
-        self.pose = np.array(state_to_np(msg))
+    def current_state_callback(self, msg: Odometry):
+        self.pose = np.array(odometry_to_np(msg))
         eps_position = 0.5  # TODO tune
         eps_angle = 0.1  # TODO tune
 
