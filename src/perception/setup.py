@@ -22,6 +22,7 @@ setup(
             f"oakd = {package_name}.oakd:main",
             f"perception_node = {package_name}.perception_node:main",
             f"debug_node = {package_name}.debug_node:main",
+            f"data_node = {package_name}.data_node:main",
         ],
     },
 )
