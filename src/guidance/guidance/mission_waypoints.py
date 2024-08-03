@@ -9,12 +9,13 @@ from std_msgs.msg import Header
 from control.utils import pose_to_np, state_to_np, wrench_to_np
 from pathlib import Path
 
-class CheckpointManager(Node):
+
+class MissionWaypoints(Node):
 
     def __init__(self):
-        super().__init__("manual_waypoints")
+        super().__init__("mission_waypoints")
 
-        path = Path.cwd() / "src" / "guidance" / "data" / "manual_waypoints.json"
+        path = Path.cwd() / "src" / "guidance" / "data" / "mission_waypoints.json"
         with open(path, "r") as f:
             waypoints = json.load(f)
         self._checkpoints = np.array(waypoints, dtype=np.float64)

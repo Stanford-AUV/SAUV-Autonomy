@@ -4,13 +4,14 @@ from rclpy.time import Time
 from std_srvs.srv import Empty
 import numpy as np
 import threading
-from msgs.msg import Pose, State, Wrench
+from msgs.msg import Pose, Wrench
 from geometry_msgs.msg import Vector3
+from nav_msgs.msg import Odometry
 from simple_pid import PID
 from scipy.spatial.transform import Rotation as R
 import json
 import math
-from control.utils import pose_to_np, state_to_np
+from control.utils import pose_to_np, odometry_to_np
 from pathlib import Path
 
 
@@ -55,7 +56,7 @@ class Controller(Node):
 
         # Initialize current state subscriber
         self.state_subscription_ = self.create_subscription(
-            State, "state", self.state_callback, 10
+            Odometry, "state", self.state_callback, 10
         )
 
         # Initialize desired state subscriber
@@ -76,10 +77,10 @@ class Controller(Node):
         self.motion_profiles = [None] * self.dim_
         self.profile_start_time = None
 
-    def state_callback(self, msg: State):
+    def state_callback(self, msg: Odometry):
         """Get our current pose from a topic."""
         with self.lock:
-            self.pose = np.array(state_to_np(msg))
+            self.pose = np.array(odometry_to_np(msg))
             timestamp = Time(
                 seconds=msg.header.stamp.sec,
                 nanoseconds=msg.header.stamp.nanosec,
