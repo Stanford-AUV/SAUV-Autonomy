@@ -14,8 +14,8 @@ def generate_launch_description():
                 ros_arguments=ros_arguments,
             ),
             Node(
-                package=package,
-                executable="checkpoint_manager",
+                package="guidance",
+                executable="waypoints",
                 ros_arguments=ros_arguments,
             ),
             # Node(

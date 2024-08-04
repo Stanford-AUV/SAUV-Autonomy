@@ -87,6 +87,12 @@ For example:
 ros2 run control thruster_manager
 ```
 
+You can also run a launch file (which launches multiple nodes at once) like so:
+
+```bash
+ros2 launch src/control/launch/sim.py
+```
+
 # Testing
 
 To run tests, use the `unittest` module like so:
