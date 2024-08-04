@@ -7,7 +7,7 @@ from msgs.msg import Pose, Wrench
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Vector3
 from std_msgs.msg import Header
-from control.utils import pose_to_np, state_to_np, wrench_to_np
+from control.utils import pose_to_np, odometry_to_np, wrench_to_np
 from pathlib import Path
 
 class CheckpointManager(Node):

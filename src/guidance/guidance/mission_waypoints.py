@@ -6,7 +6,7 @@ import json
 from msgs.msg import Pose, State, Wrench
 from geometry_msgs.msg import Vector3
 from std_msgs.msg import Header
-from control.utils import pose_to_np, state_to_np, wrench_to_np
+from control.utils import odometry_to_np, state_to_np, wrench_to_np
 from pathlib import Path
 
 
