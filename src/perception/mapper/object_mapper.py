@@ -177,6 +177,7 @@ class ObjectMapperNode(LifecycleNode):
         y = bounding_box.center.position.y
         # TODO: Assume depth image is same 'size' as detection image, probably need to do some sort of normalization here
         # TODO: Depth in mm, probably need to convert (meters?)
+        # TODO: Average depth across bounding box for a more reliable sense of depth
         z = depth_img[x][y]
 
         return Vector3(x=x, y=y, z=z)
