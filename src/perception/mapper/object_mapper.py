@@ -15,14 +15,16 @@ from rclpy.lifecycle import LifecycleState
 import message_filters
 from cv_bridge import CvBridge
 from control.ekf_object import ObjectEKF
+from control.utils import odometry_to_np
+
 
 from sensor_msgs.msg import Image
 from yolov8_msgs.msg import BoundingBox2D
 from yolov8_msgs.msg import Detection
 from yolov8_msgs.msg import DetectionArray
 
-from msgs.msg import State
 from msgs.msg import Object
+from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Vector3
 
 class ObjectMapperNode(LifecycleNode):
@@ -80,7 +82,7 @@ class ObjectMapperNode(LifecycleNode):
 
         # Subscribe to state topic, required for converting coordinates from sub-context to global-context
         self.sub_state = message_filters.Subscriber(
-            self, State, "state_topic", qos_profile=10
+            self, Odometry, "state", qos_profile=10
         )
 
         self._synchronizer = message_filters.ApproximateTimeSynchronizer(
@@ -114,7 +116,7 @@ class ObjectMapperNode(LifecycleNode):
 
         return TransitionCallbackReturn.SUCCESS
 
-    def detections_cb(self, stereo_msg: Image, detection_msg: DetectionArray, sub_state_msg: State) -> None:
+    def detections_cb(self, stereo_msg: Image, detection_msg: DetectionArray, sub_odometry: Odometry) -> None:
         """
         Description:
             This callback is invoked when the node receives published data from both the `image_raw` and
@@ -131,8 +133,9 @@ class ObjectMapperNode(LifecycleNode):
 
         depth_img = self.cv_bridge.imgmsg_to_cv2(stereo_msg)
 
-        current_sub_position = sub_state_msg.position
-        current_sub_orientation = sub_state_msg.orientation_euler
+        sub_position = odometry_to_np(sub_odometry)
+        current_sub_position = sub_position[0:3] # First tuple is x,y,z position
+        current_sub_orientation = sub_position[3:6] # Second tuple is orientation
         # TODO: Get sub's current dt
         current_sub_dt = 0
 
