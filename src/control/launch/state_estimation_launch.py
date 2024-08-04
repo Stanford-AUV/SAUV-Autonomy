@@ -39,20 +39,23 @@ def generate_launch_description():
         [
             Node(
                 package = "robot_localization",
-                executable = "ukf_node",
-                name = "ukf_filter_node",
+                executable = "ekf_node",
+                name = "ekf_filter_node",
                 parameters = [
                     {
                         "world_frame": "odom",
-                        "frequency": 200.0,
+                        "odom_frame": "odom",
+                        "base_link_frame": "base_link",
+                        "frequency": 60.0,
                         "imu0": "/imu/data", # IMU input
                         "imu0_config": [False, False, False,
-                                        True, True, True,
+                                        False, False, False,
                                         False, False, False,
                                         True, True, True,
                                         True, True, True],
-                        "imu0_differential": False,
-                        "imu0_relative": True,
+                        "imu0_differential": True,
+                        "imu0_relative": False,
+                        "imu0_queue_size": 10,
                         "imu0_remove_gravitational_acceleration": True,
                         "twist0": "/dvl/twist", # DVL input
                         "twist0_config": [False, False, False,
@@ -60,6 +63,8 @@ def generate_launch_description():
                                         True, True, True,
                                         False, False, False,
                                         False, False, False],
+                        "twist0_differential": True,
+                        "twist0_relative": False,
                         "pose0": "/depth/pose", # Depth input
                         "pose0_config": [False, False, True,
                                         False, False, False,
@@ -67,6 +72,7 @@ def generate_launch_description():
                                         False, False, False,
                                         False, False, False],
                         "pose0_relative": False,
+                        "pose0_differential": True,
                     }
                 ]
             )

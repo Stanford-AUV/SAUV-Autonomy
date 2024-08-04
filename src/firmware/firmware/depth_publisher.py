@@ -5,7 +5,7 @@ from rclpy.node import Node
 
 # from std_msgs.msg import Float64
 from msgs.msg import DepthData as Depth
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseWithCovarianceStamped
 
 MODE = 0  # MODE 0 is freshwater, MODE 1 is saltwater
 
@@ -17,7 +17,7 @@ class DepthPublisher(Node):
     def __init__(self):
         super().__init__("depth_publisher")
         self.publisher_ = self.create_publisher(Depth, "/depth/data", 10)
-        self.pose_publisher_ = self.create_publisher(PoseStamped, "/depth/pose", 10)
+        self.pose_publisher_ = self.create_publisher(PoseWithCovarianceStamped, "/depth/pose", 10)
         timer_period = 0.03  # seconds, determined empirically...
         self.timer = self.create_timer(timer_period, self.timer_callback)
 
@@ -48,12 +48,12 @@ class DepthPublisher(Node):
         depth_msg = Depth()
 
         if sensor.read():
-            pose_stamped = PoseStamped()
+            pose_stamped = PoseWithCovarianceStamped()
             pose_stamped.header.frame_id = "depth_link"
             pose_stamped.header.stamp = self.get_clock().now().to_msg()
-            pose_stamped.pose.position.x = 0.0
-            pose_stamped.pose.position.y = 0.0
-            pose_stamped.pose.position.z = sensor.depth()
+            pose_stamped.pose.pose.position.x = 0.0
+            pose_stamped.pose.pose.position.y = 0.0
+            pose_stamped.pose.pose.position.z = -sensor.depth()
 
             depth_msg.header.stamp = self.get_clock().now().to_msg()
             depth_msg.pressure = sensor.pressure(ms5837.UNITS_psi)

@@ -12,6 +12,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/string.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
+#include "geometry_msgs/msg/twist_with_covariance_stamped.hpp"
 
 
 /***
@@ -33,7 +34,7 @@ class DvlPublisher : public rclcpp::Node
   public:
     DvlPublisher() : Node("dvl_publisher")
     {
-      publisher_ = this->create_publisher<geometry_msgs::msg::TwistStamped>("/dvl/twist", 10);
+      publisher_ = this->create_publisher<geometry_msgs::msg::TwistWithCovarianceStamped>("/dvl/twist", 10);
       timer_ = this->create_wall_timer(
             std::chrono::milliseconds(PUBLISH_TIME_MS),
             std::bind(&DvlPublisher::timer_callback, this));
@@ -86,15 +87,15 @@ class DvlPublisher : public rclcpp::Node
     void init_dvl()
     {
         const char *config_commands[] = {
-            "CB811\r",        // 115200 baud, no parity, 1 stop bit
-            "#PD0\r",         // standard DVL format, machine readable
-            "#CT1\r",         // turnkey operation (within 10s)
-            "TE00:00:00.00\r", // ping time is as fast as possible
-            "BX00120\r",       // ensure max ping range (12m)
-            "EA+04500\r",      // heading alignment of the DVL
-            "ES00\r",           // set salinity to 0 PPM
-            "CK\r",            // save configuration
-            "CS\r",           // begin reading
+            // "CB811",        // 115200 baud, no parity, 1 stop bit
+            // "#PD0",         // standard DVL format, machine readable
+            // "#CT1",         // turnkey operation (within 10s)
+            // "TE00:00:00.00", // ping time is as fast as possible
+            // "BX00120",       // ensure max ping range (12m)
+            // "EA+04500",      // heading alignment of the DVL
+            // "ES00",           // set salinity to 0 PPM
+            // "CK",            // save configuration
+            "CS",           // begin reading
         };
         const size_t num_commands = sizeof(config_commands) / sizeof(config_commands[0]);
 
@@ -145,7 +146,7 @@ class DvlPublisher : public rclcpp::Node
           found = tdym::PDD_GetPD0Ensemble(decoder, &ens);
           if (found)
           {
-            // RCLCPP_INFO(this->get_logger(), "Ensemble found!");
+            RCLCPP_INFO(this->get_logger(), "Ensemble found!");
 
             double velArray[FOUR_BEAMS];
             tdym::PDD_GetVesselVelocities(&ens, velArray);
@@ -155,12 +156,12 @@ class DvlPublisher : public rclcpp::Node
               }
             }
 
-            geometry_msgs::msg::TwistStamped velMessage; // NOTE: not sure what the order or meaning of the four means are!
+            geometry_msgs::msg::TwistWithCovarianceStamped velMessage; // NOTE: not sure what the order or meaning of the four means are!
             velMessage.header.frame_id = "dvl_link";
             velMessage.header.stamp = this->now();
-            velMessage.twist.linear.x = velArray[0];
-            velMessage.twist.linear.y = velArray[1];
-            velMessage.twist.linear.z = velArray[2];
+            velMessage.twist.twist.linear.x = velArray[1];
+            velMessage.twist.twist.linear.y = -velArray[0];
+            velMessage.twist.twist.linear.z = velArray[2];
 
             publisher_->publish(velMessage);
             if (firstEnsemble == false){
@@ -175,7 +176,7 @@ class DvlPublisher : public rclcpp::Node
 
   //Variables
   rclcpp::TimerBase::SharedPtr timer_;
-  rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr publisher_;
+  rclcpp::Publisher<geometry_msgs::msg::TwistWithCovarianceStamped>::SharedPtr publisher_;
   int fd_;
   unsigned char* buffer = new unsigned char[BUFFER_SIZE];
   tdym::PDD_Decoder* decoder = new tdym::PDD_Decoder();

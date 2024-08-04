@@ -33,6 +33,24 @@ def generate_launch_description():
         )
     ])
 
+    map_to_world= LaunchDescription([
+        Node(
+            package="tf2_ros",
+            executable="static_transform_publisher",
+            output="screen",
+            arguments=["0","0","0","0","0","0","world","map",] # IMU is upside down and facing backwards
+        )
+    ])
+
+    odom_to_map = LaunchDescription([
+        Node(
+            package="tf2_ros",
+            executable="static_transform_publisher",
+            output="screen",
+            arguments=["0","0","0","0","0","0","map","odom",] # IMU is upside down and facing backwards
+        )
+    ])
+
     return LaunchDescription(
         [
             # launch_ros.actions.SetParameter(name='use_sim_time', value=True),
@@ -55,7 +73,9 @@ def generate_launch_description():
                 output="screen",
             ),
             base_link_to_dvl,
-            base_link_to_imu,
+            # base_link_to_imu,
             base_link_to_depth,
+            map_to_world,
+            odom_to_map,
         ]
     )

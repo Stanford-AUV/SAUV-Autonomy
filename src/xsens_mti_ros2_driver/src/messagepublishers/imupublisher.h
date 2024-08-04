@@ -109,8 +109,8 @@ struct ImuPublisher : public PacketCallback, PublisherHelperFunctions
             XsQuaternion q = packet.orientationQuaternion();
 
             quaternion.w = q.w();
-            quaternion.x = q.x();
-            quaternion.y = q.y();
+            quaternion.x = -q.x();
+            quaternion.y = -q.y();
             quaternion.z = q.z();
             
             // tf2::Quaternion tf2_quat;
@@ -132,8 +132,8 @@ struct ImuPublisher : public PacketCallback, PublisherHelperFunctions
         if (gyro_available)
         {
             XsVector g = packet.calibratedGyroscopeData();
-            gyro.x = g[0];
-            gyro.y = g[1];
+            gyro.x = -g[0];
+            gyro.y = -g[1];
             gyro.z = g[2];
         }
 
