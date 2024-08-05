@@ -46,8 +46,8 @@ def generate_launch_description():
                         "world_frame": "odom",
                         "odom_frame": "odom",
                         "base_link_frame": "base_link",
-                        "frequency": 60.0,
-                        "imu0": "/imu/data", # IMU input
+                        "frequency": 120.0,
+                        "imu0": "/imu/data", # IMU input -- would prefer to use pose!
                         "imu0_config": [False, False, False,
                                         False, False, False,
                                         False, False, False,
@@ -72,7 +72,15 @@ def generate_launch_description():
                                         False, False, False,
                                         False, False, False],
                         "pose0_relative": False,
-                        "pose0_differential": True,
+                        "pose0_differential": True, 
+                        "pose1": "/imu/pose",
+                        "pose1_config": [False, False, False, # IMU pose
+                                        True, True, True,
+                                        False, False, False,
+                                        False, False, False,
+                                        False, False, False],
+                        "pose1_relative": True,
+                        "pose1_differential": False,
                     }
                 ]
             )

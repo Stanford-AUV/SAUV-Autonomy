@@ -62,6 +62,12 @@ def generate_launch_description():
             ),
             Node(
                 package="firmware",
+                executable="imu_pose_talker",
+                name="imu_pose_talker",
+                output="screen",
+            ),
+            Node(
+                package="firmware",
                 executable="depth_talker",
                 name="depth_talker",
                 output="screen",

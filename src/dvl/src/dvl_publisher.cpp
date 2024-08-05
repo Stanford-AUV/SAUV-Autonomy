@@ -87,14 +87,19 @@ class DvlPublisher : public rclcpp::Node
     void init_dvl()
     {
         const char *config_commands[] = {
-            // "CB811",        // 115200 baud, no parity, 1 stop bit
-            // "#PD0",         // standard DVL format, machine readable
-            // "#CT1",         // turnkey operation (within 10s)
-            // "TE00:00:00.00", // ping time is as fast as possible
-            // "BX00120",       // ensure max ping range (12m)
-            // "EA+04500",      // heading alignment of the DVL
-            // "ES00",           // set salinity to 0 PPM
-            // "CK",            // save configuration
+            "CR1",
+            "CB811",        // 115200 baud, no parity, 1 stop bit
+            "#PD0",         // standard DVL format, machine readable
+            "#CT1",         // turnkey operation (within 10s)
+            "TE00:00:00.00", // ensemble time is as fast as possible
+            "BP001", // enable single ping bottom track
+            "EX10010", // coordinate stuff
+            "#BJ100111000",  // Set bottom track output types
+            "TP00:00.00",    // ping time is fast as possible
+            "BX00120",       // ensure max ping range (12m)
+            "EA+04500",      // heading alignment of the DVL
+            "ES00",           // set salinity to 0 PPM
+            "CK",            // save configuration
             "CS",           // begin reading
         };
         const size_t num_commands = sizeof(config_commands) / sizeof(config_commands[0]);
@@ -146,7 +151,7 @@ class DvlPublisher : public rclcpp::Node
           found = tdym::PDD_GetPD0Ensemble(decoder, &ens);
           if (found)
           {
-            RCLCPP_INFO(this->get_logger(), "Ensemble found!");
+            // RCLCPP_INFO(this->get_logger(), "Ensemble found!");
 
             double velArray[FOUR_BEAMS];
             tdym::PDD_GetVesselVelocities(&ens, velArray);
