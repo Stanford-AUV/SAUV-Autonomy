@@ -46,8 +46,9 @@ def generate_launch_description():
                         "world_frame": "odom",
                         "odom_frame": "odom",
                         "base_link_frame": "base_link",
-                        "frequency": 120.0,
-                        "imu0": "/imu/data", # IMU input -- would prefer to use pose!
+                        "permit_corrected_publication": False,
+                        "frequency": 60.0,
+                        "imu0": "/imu/data_sync", # IMU input -- would prefer to use pose!
                         "imu0_config": [False, False, False,
                                         False, False, False,
                                         False, False, False,
@@ -57,7 +58,7 @@ def generate_launch_description():
                         "imu0_relative": False,
                         "imu0_queue_size": 10,
                         "imu0_remove_gravitational_acceleration": True,
-                        "twist0": "/dvl/twist", # DVL input
+                        "twist0": "/dvl/twist_sync", # DVL input
                         "twist0_config": [False, False, False,
                                         False, False, False,
                                         True, True, True,
@@ -65,7 +66,7 @@ def generate_launch_description():
                                         False, False, False],
                         "twist0_differential": True,
                         "twist0_relative": False,
-                        "pose0": "/depth/pose", # Depth input
+                        "pose0": "/depth/pose_sync", # Depth input
                         "pose0_config": [False, False, True,
                                         False, False, False,
                                         False, False, False,
@@ -73,7 +74,7 @@ def generate_launch_description():
                                         False, False, False],
                         "pose0_relative": False,
                         "pose0_differential": True, 
-                        "pose1": "/imu/pose",
+                        "pose1": "/imu/pose_sync",
                         "pose1_config": [False, False, False, # IMU pose
                                         True, True, True,
                                         False, False, False,

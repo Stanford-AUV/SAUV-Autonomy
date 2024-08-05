@@ -62,10 +62,16 @@ def generate_launch_description():
             ),
             Node(
                 package="firmware",
-                executable="imu_pose_talker",
-                name="imu_pose_talker",
+                executable="sync_filter_exact",
+                name="sync_filter_exact",
                 output="screen",
             ),
+            # Node( # use this OR sync_filter_exact ONLY
+            #     package="firmware",
+            #     executable="imu_pose",
+            #     name="imu_pose",
+            #     output="screen",
+            # ),
             Node(
                 package="firmware",
                 executable="depth_talker",

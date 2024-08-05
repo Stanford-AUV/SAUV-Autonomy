@@ -23,7 +23,8 @@ setup(
             "depth_talker = firmware.depth_publisher:main",
             "sync_filter = firmware.sync_filter:main",
             "sync_imu = firmware.sync_imu:main",
-            "imu_pose_talker = firmware.imu_pose:main"
+            "imu_pose_talker = firmware.imu_pose:main",
+            "sync_filter_exact = firmware.sync_filter_exact:main"
         ],
     },
 )
