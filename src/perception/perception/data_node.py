@@ -25,6 +25,9 @@ from visualization_msgs.msg import MarkerArray
 from yolov8_msgs.msg import BoundingBox2D
 from yolov8_msgs.msg import Detection
 from yolov8_msgs.msg import DetectionArray
+import os
+import glob
+from pathlib import Path
 
 
 class DataNode(LifecycleNode):
@@ -38,6 +41,7 @@ class DataNode(LifecycleNode):
         # params
         self.declare_parameter("image_reliability",
                                QoSReliabilityPolicy.BEST_EFFORT)
+        self.declare_parameter("max_files", 1000)
 
         self.get_logger().info("Data node created")
         self.output_dir = "./raw_images"
@@ -81,15 +85,41 @@ class DataNode(LifecycleNode):
         return TransitionCallbackReturn.SUCCESS
 
 
+    def maintain_image_limit(self, folder_path, max_files=100):
+        # Convert folder_path to Path object
+        folder_path = Path(folder_path)
+
+        # List all image files in the directory
+        files = list(folder_path.glob('*'))  # Adjust pattern if needed, e.g., '*.jpg'
+        
+        # Check if there are more files than the allowed limit
+
+        if len(files) > max_files:
+            # Sort files by modification time (oldest first)
+            files.sort(key=lambda x: x.stat().st_mtime)
+            
+            # Calculate the number of files to delete
+            files_to_delete = files[:len(files) - max_files]
+            
+            # Delete the oldest files
+            for file in files_to_delete:
+                try:
+                    file.unlink()
+                    print(f"Deleted {file}")
+                except Exception as e:
+                    print(f"Error deleting {file}: {e}")
+                    
     def image_cb(self, msg: Image) -> None:
         current_time = self.get_clock().now().to_msg().sec
-        if current_time - self.last_save_time >= 2.0:
+        if current_time - self.last_save_time >= 1.0:
             self.last_save_time = current_time
             cv_image = self.cv_bridge.imgmsg_to_cv2(msg)
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
             filename = os.path.join(self.output_dir, f'{timestamp}.jpg')
             cv2.imwrite(filename, cv_image)
             print(f"Wrote to {filename}")
+            self.maintain_image_limit(self.output_dir, self.get_parameter("max_files").get_parameter_value().integer_value,)
+            
 
 def main():
     rclpy.init()
