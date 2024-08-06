@@ -56,7 +56,7 @@ class Controller(Node):
 
         # Initialize current state subscriber
         self.state_subscription_ = self.create_subscription(
-            Odometry, "state", self.state_callback, 10
+            Odometry, "/odometry/filtered", self.state_callback, 10
         )
 
         # Initialize desired state subscriber
