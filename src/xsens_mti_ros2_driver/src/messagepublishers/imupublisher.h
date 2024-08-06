@@ -66,7 +66,10 @@
 #include "packetcallback.h"
 #include "publisherhelperfunctions.h"
 #include <sensor_msgs/msg/imu.hpp>
+#include <tf2/LinearMath/Quaternion.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
+// WARNING: THE ACCELERATION AND ORIENTATION ARE ADJUST TO ALIGN WITH ROBOT
 
 struct ImuPublisher : public PacketCallback, PublisherHelperFunctions
 {
@@ -106,17 +109,31 @@ struct ImuPublisher : public PacketCallback, PublisherHelperFunctions
             XsQuaternion q = packet.orientationQuaternion();
 
             quaternion.w = q.w();
-            quaternion.x = q.x();
-            quaternion.y = q.y();
+            quaternion.x = -q.x();
+            quaternion.y = -q.y();
             quaternion.z = q.z();
+            
+            // tf2::Quaternion tf2_quat;
+            // tf2::fromMsg(quaternion, tf2_quat);
+
+            // // Create a quaternion representing a 180-degree rotation about the z-axis
+            // tf2::Quaternion rotation;
+            // rotation.setRPY(0, 0, 0);  // Roll = 0, Pitch = 0, Yaw = π (180 degrees)
+
+            // // Apply the rotation
+            // tf2::Quaternion rotated_quat = rotation * tf2_quat;
+
+            // // Convert back to ROS 2 quaternion
+            // quaternion = tf2::toMsg(rotated_quat);
+
         }
 
         geometry_msgs::msg::Vector3 gyro;
         if (gyro_available)
         {
             XsVector g = packet.calibratedGyroscopeData();
-            gyro.x = g[0];
-            gyro.y = g[1];
+            gyro.x = -g[0];
+            gyro.y = -g[1];
             gyro.z = g[2];
         }
 
@@ -124,8 +141,8 @@ struct ImuPublisher : public PacketCallback, PublisherHelperFunctions
         if (accel_available)
         {
             XsVector a = packet.calibratedAcceleration();
-            accel.x = a[0];
-            accel.y = a[1];
+            accel.x = -a[0];
+            accel.y = -a[1];
             accel.z = a[2];
         }
 
@@ -137,7 +154,8 @@ struct ImuPublisher : public PacketCallback, PublisherHelperFunctions
             std::string frame_id = DEFAULT_FRAME_ID;
             node_handle.get_parameter("frame_id", frame_id);
 
-            msg.header.stamp = timestamp;
+            // msg.header.stamp = timestamp;
+            msg.header.stamp = node_handle.now();
             msg.header.frame_id = frame_id;
 
             msg.orientation = quaternion;
