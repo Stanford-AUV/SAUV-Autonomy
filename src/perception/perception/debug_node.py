@@ -39,6 +39,10 @@ class DebugNode(LifecycleNode):
 
         self.get_logger().info("Debug node created")
 
+        self.output_dir = "./debug_images"
+        self.last_save_time = 0
+        os.makedirs(self.output_dir, exist_ok=True)
+
     def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
         self.get_logger().info(f"Configuring {self.get_name()}")
 
@@ -54,8 +58,6 @@ class DebugNode(LifecycleNode):
         self._dbg_pub = self.create_publisher(Image, "dbg_image", 10)
         self._bb_markers_pub = self.create_publisher(
             MarkerArray, "dgb_bb_markers", 10)
-        self._kp_markers_pub = self.create_publisher(
-            MarkerArray, "dgb_kp_markers", 10)
 
         return TransitionCallbackReturn.SUCCESS
 
@@ -89,7 +91,6 @@ class DebugNode(LifecycleNode):
 
         self.destroy_publisher(self._dbg_pub)
         self.destroy_publisher(self._bb_markers_pub)
-        self.destroy_publisher(self._kp_markers_pub)
 
         return TransitionCallbackReturn.SUCCESS
 
@@ -153,15 +154,33 @@ class DebugNode(LifecycleNode):
 
         return marker
 
-    def detections_cb(self, img_msg: Image, detection_msg: DetectionArray) -> None:
+    def maintain_image_limit(self, folder_path, max_files=100):
+        # Convert folder_path to Path object
+        folder_path = Path(folder_path)
 
-        print("calling detection cb....")
+        # List all image files in the directory
+        files = list(folder_path.glob('*'))  # Adjust pattern if needed, e.g., '*.jpg'
+        
+        # Check if there are more files than the allowed limit
+
+        if len(files) > max_files:
+            # Sort files by modification time (oldest first)
+            files.sort(key=lambda x: x.stat().st_mtime)
+            
+            # Calculate the number of files to delete
+            files_to_delete = files[:len(files) - max_files]
+            
+            # Delete the oldest files
+            for file in files_to_delete:
+                try:
+                    file.unlink()
+                    print(f"Deleted {file}")
+                except Exception as e:
+                    print(f"Error deleting {file}: {e}")
+    def detections_cb(self, img_msg: Image, detection_msg: DetectionArray) -> None:
 
         cv_image = self.cv_bridge.imgmsg_to_cv2(img_msg)
         bb_marker_array = MarkerArray()
-        kp_marker_array = MarkerArray()
-
-        print("detection_cb....")
         detection: Detection
         for detection in detection_msg.detections:
 
@@ -178,18 +197,29 @@ class DebugNode(LifecycleNode):
 
             cv_image = self.draw_box(cv_image, detection, color)
 
+            # save debug image
+            current_time = self.get_clock().now().to_msg().sec
+            if current_time - self.last_save_time >= 1.0:
+                self.last_save_time = current_time
+                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                filename = os.path.join(self.output_dir, f'{timestamp}.jpg')
+                cv2.imwrite(filename, cv_image)
+                print(f"Wrote to {filename}")
+                self.maintain_image_limit(self.output_dir, self.max_files)
+
+
             if detection.bbox3d.frame_id:
                 marker = self.create_bb_marker(detection, color)
                 marker.header.stamp = img_msg.header.stamp
                 marker.id = len(bb_marker_array.markers)
                 bb_marker_array.markers.append(marker)
 
+        
 
         # publish dbg image
         self._dbg_pub.publish(self.cv_bridge.cv2_to_imgmsg(cv_image,
                                                            encoding=img_msg.encoding))
         self._bb_markers_pub.publish(bb_marker_array)
-        self._kp_markers_pub.publish(kp_marker_array)
 
 
 def main():
