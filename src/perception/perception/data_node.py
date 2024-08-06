@@ -41,7 +41,7 @@ class DataNode(LifecycleNode):
         # params
         self.declare_parameter("image_reliability",
                                QoSReliabilityPolicy.BEST_EFFORT)
-        self.declare_parameter("max_files", 1000)
+        self.declare_parameter("max_files", 2000)
 
         self.get_logger().info("Data node created")
         self.output_dir = "./raw_images"
