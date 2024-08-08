@@ -27,7 +27,7 @@ class CheckpointManager(Node):
         self.wrench = np.zeros(self.dim_)
         self.pose = np.zeros(self.dim_)
         self._current_state_sub = self.create_subscription(
-            Odometry, "state", self.current_state_callback, 10
+            Odometry, "/odometry/filtered", self.current_state_callback, 10
         )
 
         timer_period = 0.1  # TODO: Don't hardcode this

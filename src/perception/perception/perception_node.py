@@ -30,7 +30,7 @@ class Yolov8Node(LifecycleNode):
         super().__init__("yolov8_node")
 
         # params
-        self.declare_parameter("model", "/home/selenas/SAUV/data/best.pt")
+        self.declare_parameter("model", "./best.pt")
         self.declare_parameter("device", "cuda")
         self.declare_parameter("threshold", 0.5)
         self.declare_parameter("enable", True)
@@ -72,11 +72,10 @@ class Yolov8Node(LifecycleNode):
         )
         self.cv_bridge = CvBridge()
 
-        print("@@@@@@@@@@@2")
-        #import torch
-        #print(torch.cuda.is_available())
-
-        print("#####")
+        print("Using GPU:")
+        import torch
+        print(torch.cuda.is_available())
+        print("################")
         return TransitionCallbackReturn.SUCCESS
 
     def enable_cb(self, request, response):

@@ -37,7 +37,6 @@ def quaternion_to_euler(quaternion):
     """
     rot = Rotation.from_quat(quaternion)
     return rot.as_euler('xyz')
-    
 
 def euler_to_quaternion(euler_angle):
     """
@@ -59,7 +58,7 @@ def state_to_np(o: State | Pose):
                 o.orientation_euler.z,
             ]
         )
-    
+
 def odometry_to_np(o: Odometry):
     if isinstance(o, Odometry):
         position = [
@@ -77,6 +76,24 @@ def odometry_to_np(o: Odometry):
         return np.array(
             position.extend(orientation_euler)
         )
+
+def odometry_to_np(o: Odometry):
+    if isinstance(o, Odometry):
+        position = [
+            o.pose.pose.position.x,
+            o.pose.pose.position.y,
+            o.pose.pose.position.z
+        ]
+        orientation_quat = [
+            o.pose.pose.orientation.x,
+            o.pose.pose.orientation.y,
+            o.pose.pose.orientation.z,
+            o.pose.pose.orientation.w
+        ]
+        orientation_euler = quaternion_to_euler(orientation_quat)
+        position.extend(orientation_euler)
+        return position
+
 
 
 def wrench_to_np(o: Wrench):
