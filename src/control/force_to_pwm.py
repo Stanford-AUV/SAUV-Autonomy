@@ -5,6 +5,14 @@ import json
 Robot Orientation
 """
 
+COEFFS = {
+        10: [1.8343560975506323e-05, 1481.466452853926],
+        12: [2.3194713277650457e-05, 1481.0593557569864],
+        14: [2.8235512746477604e-05, 1480.8191181032553],
+        16: [3.28040783880607e-05, 1480.6115720889093],
+        18: [3.638563822982247e-05, 1481.421310875163],
+        20: [3.8972515653759295e-05, 1480.4018523627565],
+    }
 
 def quadratic_model(x, a, b):
     return a * np.square(x - b)
@@ -15,71 +23,61 @@ def inverse_quadratic_model(x, a, b):
     return np.where(x >= 0, b + second_part, b - second_part)
 
 
-COEFFS = {
-    10: [1.8343560975506323e-05, 1481.466452853926],
-    12: [2.3194713277650457e-05, 1481.0593557569864],
-    14: [2.8235512746477604e-05, 1480.8191181032553],
-    16: [3.28040783880607e-05, 1480.6115720889093],
-    18: [3.638563822982247e-05, 1481.421310875163],
-    20: [3.8972515653759295e-05, 1480.4018523627565],
-}
-
-TAM = np.empty(shape=(6, 8))
-
-# thruster positions in body frame
-# Real robot axes, the axes in Gazebo are different
-
-"""
-Frame measurements:
-x length: 0.56m. Motors on frame
-y length: 0.30m, Add/subtract 0.076m to get motor positions
-z length: 0.43m. Motors 0.09m and 0.254m off the ground
-
-Motor positions are meant to be relative to CG
-For ease of measurement we assume CG is at the center of the frame
-"""
-
-r_is = np.array(
-    [
-        [-0.272, -0.22, -0.125],  # ... pin 2 bottom, lower right
-        [+0.272, -0.22, -0.125],  # ... pin 3 bottom, upper right
-        [+0.272, +0.22, -0.125],  # ... pin 4 bottom, upper left
-        [-0.272, +0.22, -0.125],  # ... pin 5 bottom, lower left
-        [-0.272, +0.22, +0.04],  # ... pin 6 top, lower left
-        [-0.272, -0.22, +0.04],  # ... pin 7 top, lower right
-        [+0.272, -0.22, +0.04],  # ... pin 8 top, upper right
-        [+0.272, +0.22, +0.04],  # ... pin 9, top, upper left
-    ]
-)
-
-# thruster orientations
-# note: these point in the direction of positive thrust; z axis can be changed accordingly
-
-u_is = np.array(
-    [
-        [0, 0, -1],
-        [0, 0, -1],
-        [0, 0, -1],
-        [0, 0, -1],
-        [-np.cos(np.pi / 4), -np.sin(np.pi / 4), 0],
-        [-np.cos(np.pi / 4), +np.sin(np.pi / 4), 0],
-        [-np.cos(np.pi / 4), -np.sin(np.pi / 4), 0],
-        [-np.cos(np.pi / 4), +np.sin(np.pi / 4), 0],
-    ]
-)
-
-u_is = u_is / np.linalg.norm(u_is, axis=1)[:, None]
-
-TAM[:3, :] = u_is.T
-TAM[3:, :] = np.cross(r_is, u_is).T
-
-TAM_inv = np.linalg.pinv(TAM)
-
-
 def total_force_to_individual_thrusts(desired_wrench):
     """Converts a desired force to motor thrusts.
     Force is a 6x1 vector with the desired force in the x, y, z, roll, pitch, and yaw directions.
     """
+
+    TAM = np.empty(shape=(6, 8))
+
+    # thruster positions in body frame
+    # Real robot axes, the axes in Gazebo are different
+
+    """
+    Frame measurements:
+    x length: 0.56m. Motors on frame
+    y length: 0.30m, Add/subtract 0.076m to get motor positions
+    z length: 0.43m. Motors 0.09m and 0.254m off the ground
+
+    Motor positions are meant to be relative to CG
+    For ease of measurement we assume CG is at the center of the frame
+    """
+
+    r_is = np.array(
+        [
+            [-0.272, -0.22, -0.125],  # ... pin 2 bottom, lower right
+            [+0.272, -0.22, -0.125],  # ... pin 3 bottom, upper right
+            [+0.272, +0.22, -0.125],  # ... pin 4 bottom, upper left
+            [-0.272, +0.22, -0.125],  # ... pin 5 bottom, lower left
+            [-0.272, +0.22, +0.04],  # ... pin 6 top, lower left
+            [-0.272, -0.22, +0.04],  # ... pin 7 top, lower right
+            [+0.272, -0.22, +0.04],  # ... pin 8 top, upper right
+            [+0.272, +0.22, +0.04],  # ... pin 9, top, upper left
+        ]
+    )
+
+    # thruster orientations
+    # note: these point in the direction of positive thrust; z axis can be changed accordingly
+
+    u_is = np.array(
+        [
+            [0, 0, -1],
+            [0, 0, -1],
+            [0, 0, -1],
+            [0, 0, -1],
+            [-np.cos(np.pi / 4), -np.sin(np.pi / 4), 0],
+            [-np.cos(np.pi / 4), +np.sin(np.pi / 4), 0],
+            [-np.cos(np.pi / 4), -np.sin(np.pi / 4), 0],
+            [-np.cos(np.pi / 4), +np.sin(np.pi / 4), 0],
+        ]
+    )
+
+    u_is = u_is / np.linalg.norm(u_is, axis=1)[:, None]
+
+    TAM[:3, :] = u_is.T
+    TAM[3:, :] = np.cross(r_is, u_is).T
+
+    TAM_inv = np.linalg.pinv(TAM)
     return TAM_inv @ desired_wrench
 
 
