@@ -57,10 +57,10 @@ r_is = np.array(
 
 u_is = np.array(
     [
-        [0, 0, -1],
-        [0, 0, -1],
-        [0, 0, -1],
-        [0, 0, -1],
+        [0, 0, 1],
+        [0, 0, 1],
+        [0, 0, 1],
+        [0, 0, 1],
         [-np.cos(np.pi / 4), -np.sin(np.pi / 4), 0],
         [-np.cos(np.pi / 4), +np.sin(np.pi / 4), 0],
         [-np.cos(np.pi / 4), -np.sin(np.pi / 4), 0],
