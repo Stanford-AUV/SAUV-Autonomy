@@ -41,43 +41,30 @@ For ease of measurement we assume CG is at the center of the frame
 
 r_is = np.array(
     [
-        [-0.272, +0.22, -0.125],  # ... pin 2 bottom, lower right
-        [+0.272, +0.22, -0.125],  # ... pin 3 bottom, upper right
-        [+0.272, -0.22, -0.125],  # ... pin 4 bottom, upper left
-        [-0.272, -0.22, -0.125],  # ... pin 5 bottom, lower left
-        [-0.272, -0.22, 0.04],  # ... pin 6 top, lower left
-        [-0.272, +0.22, 0.04],  # ... pin 7 top, lower right
-        [+0.272, +0.22, 0.04],  # ... pin 8 top, upper right
-        [+0.272, -0.22, 0.04],  # ... pin 9, top, upper left
+        [-0.272, -0.22, +0.125],  # ... pin 2 bottom, lower right
+        [+0.272, -0.22, +0.125],  # ... pin 3 bottom, upper right
+        [+0.272, +0.22, +0.125],  # ... pin 4 bottom, upper left
+        [-0.272, +0.22, +0.125],  # ... pin 5 bottom, lower left
+        [-0.272, +0.22, -0.04],  # ... pin 6 top, lower left
+        [-0.272, -0.22, -0.04],  # ... pin 7 top, lower right
+        [+0.272, -0.22, -0.04],  # ... pin 8 top, upper right
+        [+0.272, +0.22, -0.04],  # ... pin 9, top, upper left
     ]
 )
 
 # thruster orientations
 # note: these point in the direction of positive thrust; z axis can be changed accordingly
 
-# old_u_is = np.array(
-#     [
-#         [0, 0, -1],
-#         [0, 0, -1],
-#         [0, 0, -1],
-#         [0, 0, 1], # pin 5, weak. perhaps faulty. check cables?
-#         [-1, 1, 0],
-#         [-1, -1, 0],
-#         [-1, 1,0],
-#         [-1, -1, 0],
-#     ]
-# )
-
 u_is = np.array(
     [
-        [0, 0, -1],
-        [0, 0, -1],
-        [0, 0, -1],
-        [0, 0, -1],
-        [-np.cos(np.pi / 4), np.sin(np.pi / 4), 0],
+        [0, 0, 1],
+        [0, 0, 1],
+        [0, 0, 1],
+        [0, 0, 1],
         [-np.cos(np.pi / 4), -np.sin(np.pi / 4), 0],
-        [-np.cos(np.pi / 4), np.sin(np.pi / 4), 0],
+        [-np.cos(np.pi / 4), +np.sin(np.pi / 4), 0],
         [-np.cos(np.pi / 4), -np.sin(np.pi / 4), 0],
+        [-np.cos(np.pi / 4), +np.sin(np.pi / 4), 0],
     ]
 )
 
