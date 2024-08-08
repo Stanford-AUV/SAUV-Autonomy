@@ -22,6 +22,7 @@ class CheckpointManager(Node):
         self._checkpoints_index = 0
         self._desired_pose = self._checkpoints[self._checkpoints_index]
         self._desired_pose_pub = self.create_publisher(Pose, "desired_pose", 10)
+        self._desired_wrench_sub = self.create_subscription(Wrench, "desired_wrench", self.wrench_callback, 10)
 
         self.dim_ = 6
         self.wrench = np.zeros(self.dim_)
