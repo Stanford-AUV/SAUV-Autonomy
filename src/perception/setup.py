@@ -19,7 +19,6 @@ setup(
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
-            f"oakd = {package_name}.oakd:main",
             f"data_node = {package_name}.data_node:main",
             f"perception_node = {package_name}.perception_node:main",
             f"debug_node = {package_name}.debug_node:main",
