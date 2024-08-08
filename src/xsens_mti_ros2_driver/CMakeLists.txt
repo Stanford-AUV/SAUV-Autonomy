@@ -71,10 +71,14 @@ add_dependencies(xsens_mti_node ${PROJECT_NAME})
 #   $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/rosidl_generator_cpp> 
 #   $<INSTALL_INTERFACE:include>)
 
+find_package(tf2 REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
+
 ament_target_dependencies(xsens_mti_node 
 	rclcpp
 	tf2
 	tf2_ros
+	tf2_geometry_msgs
 	std_msgs
 	geometry_msgs
 	sensor_msgs

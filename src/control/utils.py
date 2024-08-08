@@ -74,9 +74,9 @@ def odometry_to_np(o: Odometry):
             o.pose.pose.orientation.w
         ]
         orientation_euler = quaternion_to_euler(orientation_quat)
-        return np.array(
-            position.extend(orientation_euler)
-        )
+        position.extend(orientation_euler)
+        return position
+        
 
 
 def wrench_to_np(o: Wrench):
