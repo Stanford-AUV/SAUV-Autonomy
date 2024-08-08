@@ -11,7 +11,7 @@ from simple_pid import PID
 from scipy.spatial.transform import Rotation as R
 import json
 import math
-from control.utils import pose_to_np, odometry_to_np
+from control.utils import pose_to_np, odometry_to_np, euler_to_quaternion, quaternion_to_euler
 from pathlib import Path
 
 
@@ -56,7 +56,7 @@ class Controller(Node):
 
         # Initialize current state subscriber
         self.state_subscription_ = self.create_subscription(
-            Odometry, "state", self.state_callback, 10
+            Odometry, "/odometry/filtered", self.state_callback, 10
         )
 
         # Initialize desired state subscriber
@@ -175,7 +175,6 @@ class Controller(Node):
 
         # Publish a list of control outputs:
         # [force_x, force_y, force_z, torque_roll, torque_pitch, torque_yaw]
-        wrench[5] *= -1
         msg = Wrench(
             force=Vector3(x=wrench[0], y=wrench[1], z=wrench[2]),
             torque=Vector3(x=wrench[3], y=wrench[4], z=wrench[5]),
