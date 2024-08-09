@@ -55,6 +55,8 @@ class MissionWaypoints(Node):
         for task in tasks:
             waypoints_list = []
             if task == "submerge":
+                point = [0.0, 0.0, hold_depth, 0.0, 0.0, robot_pose[5]]
+                waypoints_list.append(point)
                 point = [0.0, 0.0, hold_depth, 0.0, 0.0, 0.0]
                 waypoints_list.append(point)
             elif task == "move_through_gate_blue_arrow":
@@ -147,6 +149,8 @@ class MissionWaypoints(Node):
         self.pose = np.array(odometry_to_np(msg))
         eps_position = 0.5  # TODO tune
         eps_angle = 0.1  # TODO tune
+
+        self._missions = self.construct_waypoints(missions=self._missions, tasks=["submerge"], buoy_pos=self._buoy_pos, blue_arrow_pos=self._blue_arrow_pos, red_arrow_pos=self._red_arrow_pos, robot_pose=self.pose)
 
         position_error = np.linalg.norm(self.pose[:3] - self._desired_pose[:3])
         yaw_error = np.abs(self.find_yaw_error(self.pose[5], self._desired_pose[5]))
