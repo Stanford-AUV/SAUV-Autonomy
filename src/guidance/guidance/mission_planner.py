@@ -15,11 +15,6 @@ class MissionWaypoints(Node):
     def __init__(self):
         super().__init__("mission_waypoints")
 
-        # Indexes
-        self._task_index = 0
-        self._waypoints_index = 0
-        self._waypoints = np.array(self._missions[self._tasks[self._task_index]], dtype=np.float64)
-
         self._desired_pose = self._waypoints[self._waypoints_index]
         self._desired_pose_pub = self.create_publisher(Pose, "desired_pose", 10)
         self._desired_wrench_sub = self.create_subscription(Wrench, "desired_wrench", self.wrench_callback, 10)
@@ -42,6 +37,12 @@ class MissionWaypoints(Node):
         self._hold_depth = -1.3
         self._missions = self.construct_waypoints({}, self._tasks, self._hold_depth, self._blue_arrow_pos, self._red_arrow_pos, self._buoy_pos, self.pose)
         print(f"MISSIONS DICT: {self._missions}")
+
+         # Indexes
+        self._task_index = 0
+        self._waypoints_index = 0
+        self._waypoints = np.array(self._missions[self._tasks[self._task_index]], dtype=np.float64)
+
 
         timer_period = 0.1  # TODO: Don't hardcode this
         self.timer = self.create_timer(timer_period, self.timer_callback)
