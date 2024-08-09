@@ -1,7 +1,8 @@
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Header
-from geometry_msgs.msg import Vector3, Quaternion
+from geometry_msgs.msg import Vector3, Quaternion, Odometry
+from control.utils import pose_to_np, odometry_to_np, wrench_to_np
 from msgs.msg import (
     State,
 )  # Ensure this matches the actual import path for your custom message
@@ -14,6 +15,9 @@ class StatePublisher(Node):
     def __init__(self):
         super().__init__("state_publisher")
         self.publisher_ = self.create_publisher(State, "state_topic", 10)
+        self._current_state_sub = self.create_subscription(
+            Odometry, "/odometry/filtered", self.current_state_callback, 10
+        )
         self.timer = self.create_timer(0.1, self.publish_state)
         self.start_time = self.get_clock().now().to_msg()
         self.duration = 10.0  # Duration to reach the target position and orientation
