@@ -15,23 +15,6 @@ class MissionWaypoints(Node):
     def __init__(self):
         super().__init__("mission_waypoints")
 
-        # path = Path.cwd() / "src" / "guidance" / "data" / "mission_waypoints.json"
-        # with open(path, "r") as f:
-        #     self.missions_json = json.load(f)
-
-        self._blue_arrow_pos = np.array([5.2, 0.6, -0.5]) # TODO, MODIFY BASED ON COURSE
-        self._red_arrow_pos = np.array([5.2, -0.6, -0.5])
-        self._buoy_pos = np.array([9.3, -1.34, -0.5]) # ALPHA COURSE
-        # self._buoy_pos = np.array([9.3, -1.34, -0.5]) # BETA COURSE
-        # self._buoy_pos = np.array([9.3, -1.34, -0.5]) # C COURSE
-        # self._buoy_pos = np.array([9.3, 0.0, -1.5, 0.0, 0.0, 0.0]) # DELTA COURSE
-
-        self._tasks = np.array(["submerge", "move_through_gate_blue_arrow", "spin_ccw", "move_towards_buoy", "circumnavigate_buoy_ccw", "surface"]) # PERCEPTION TO CHANGE THESE
-        
-        self._hold_depth = -1.3
-        self._missions = self.construct_waypoints({}, self._tasks, self._hold_depth, self._blue_arrow_pos, self._red_arrow_pos, self._buoy_pos, self.pose)
-        print(f"MISSIONS DICT: {self._missions}")
-
         # Indexes
         self._task_index = 0
         self._waypoints_index = 0
@@ -47,6 +30,18 @@ class MissionWaypoints(Node):
         self._current_state_sub = self.create_subscription(
             Odometry, "/odometry/filtered", self.current_state_callback, 10
         )
+
+        self._blue_arrow_pos = np.array([5.2, 0.6, -0.5]) # TODO, MODIFY BASED ON COURSE
+        self._red_arrow_pos = np.array([5.2, -0.6, -0.5])
+        self._buoy_pos = np.array([9.3, -1.34, -0.5]) # ALPHA COURSE
+        # self._buoy_pos = np.array([9.3, -1.34, -0.5]) # BETA COURSE
+        # self._buoy_pos = np.array([9.3, -1.34, -0.5]) # C COURSE
+        # self._buoy_pos = np.array([9.3, 0.0, -1.5, 0.0, 0.0, 0.0]) # DELTA COURSE
+        self._tasks = np.array(["submerge", "move_through_gate_blue_arrow", "spin_ccw", "move_towards_buoy", "circumnavigate_buoy_ccw", "surface"]) # PERCEPTION TO CHANGE THESE
+
+        self._hold_depth = -1.3
+        self._missions = self.construct_waypoints({}, self._tasks, self._hold_depth, self._blue_arrow_pos, self._red_arrow_pos, self._buoy_pos, self.pose)
+        print(f"MISSIONS DICT: {self._missions}")
 
         timer_period = 0.1  # TODO: Don't hardcode this
         self.timer = self.create_timer(timer_period, self.timer_callback)
