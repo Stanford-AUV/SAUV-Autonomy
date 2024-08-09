@@ -95,7 +95,7 @@ class MissionWaypoints(Node):
             elif task == "surface":
                 waypoints_list.append([[buoy_pos[0] - 1, buoy_pos[1], -0.1, 0.0, 0.0, 0.0]])
 
-            missions[task] = np.array(waypoints_list)
+            missions[task] = waypoints_list
         return missions
 
     def normalize_angle(
