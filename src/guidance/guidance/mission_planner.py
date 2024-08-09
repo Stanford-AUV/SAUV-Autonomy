@@ -64,16 +64,16 @@ class MissionWaypoints(Node):
             elif task == "spin_ccw":
                 for i in range(8):
                     if "move_through_gate_blue_arrow" in tasks:
-                        point = [blue_arrow_pos[0] + 1, blue_arrow_pos[1], hold_depth, 0.0, 0.0, np.pi * (i+1)]
+                        point = [blue_arrow_pos[0] + 1, blue_arrow_pos[1], hold_depth, 0.0, 0.0, np.pi * (i+1) % (2*np.pi)]
                     elif "move_through_gate_red_arrow" in tasks:
-                        point = [red_arrow_pos[0] + 1, red_arrow_pos[1], hold_depth, 0.0, 0.0, np.pi * (i+1)]
+                        point = [red_arrow_pos[0] + 1, red_arrow_pos[1], hold_depth, 0.0, 0.0, np.pi * (i+1) % (2*np.pi)]
                     waypoints_list.append(point)
             elif task == "spin_cw":
                 for i in range(8):
                     if "move_through_gate_blue_arrow" in tasks:
-                        point = [blue_arrow_pos[0] + 1, blue_arrow_pos[1], hold_depth, 0.0, 0.0, -1 * np.pi * (i+1)]
+                        point = [blue_arrow_pos[0] + 1, blue_arrow_pos[1], hold_depth, 0.0, 0.0, -1 * np.pi * (i+1) % (2*np.pi)]
                     elif "move_through_gate_red_arrow" in tasks:
-                        point = [red_arrow_pos[0] + 1, red_arrow_pos[1], hold_depth, 0.0, 0.0, -1 * np.pi * (i+1)]
+                        point = [red_arrow_pos[0] + 1, red_arrow_pos[1], hold_depth, 0.0, 0.0, -1 * np.pi * (i+1) % (2*np.pi)]
                     waypoints_list.append(point)
             elif task == "move_towards_buoy":
                 point = [buoy_pos[0] - 1, buoy_pos[1], hold_depth, 0.0, 0.0, 0.0]
