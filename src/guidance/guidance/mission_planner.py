@@ -15,16 +15,9 @@ class MissionWaypoints(Node):
     def __init__(self):
         super().__init__("mission_waypoints")
 
-        self._desired_pose = self._waypoints[self._waypoints_index]
-        self._desired_pose_pub = self.create_publisher(Pose, "desired_pose", 10)
-        self._desired_wrench_sub = self.create_subscription(Wrench, "desired_wrench", self.wrench_callback, 10)
-
         self.dim_ = 6
         self.wrench = np.zeros(self.dim_)
         self.pose = np.zeros(self.dim_)
-        self._current_state_sub = self.create_subscription(
-            Odometry, "/odometry/filtered", self.current_state_callback, 10
-        )
 
         self._blue_arrow_pos = np.array([5.2, 0.6, -0.5]) # TODO, MODIFY BASED ON COURSE
         self._red_arrow_pos = np.array([5.2, -0.6, -0.5])
@@ -43,6 +36,13 @@ class MissionWaypoints(Node):
         self._waypoints_index = 0
         self._waypoints = np.array(self._missions[self._tasks[self._task_index]], dtype=np.float64)
 
+        self._desired_pose = self._waypoints[self._waypoints_index]
+        self._desired_pose_pub = self.create_publisher(Pose, "desired_pose", 10)
+        self._desired_wrench_sub = self.create_subscription(Wrench, "desired_wrench", self.wrench_callback, 10)
+
+        self._current_state_sub = self.create_subscription(
+            Odometry, "/odometry/filtered", self.current_state_callback, 10
+        )
 
         timer_period = 0.1  # TODO: Don't hardcode this
         self.timer = self.create_timer(timer_period, self.timer_callback)
