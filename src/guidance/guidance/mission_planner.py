@@ -29,7 +29,9 @@ class MissionWaypoints(Node):
 
         self._hold_depth = -1.3
         self._missions = self.construct_waypoints({}, self._tasks, self._blue_arrow_pos, self._red_arrow_pos, self._buoy_pos, self.pose, self._hold_depth)
-        print(f"MISSIONS DICT: {self._missions}")
+        print("MISSIONS DICT:")
+        for key, value in self._missions.items():
+            print(f"{key}: {value}\n")
 
          # Indexes
         self._task_index = 0
