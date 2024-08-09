@@ -29,7 +29,7 @@ class MissionWaypoints(Node):
         self._tasks = np.array(["submerge", "move_through_gate_blue_arrow", "spin_ccw", "move_towards_buoy", "circumnavigate_buoy_ccw", "surface"]) # PERCEPTION TO CHANGE THESE
         
         self._hold_depth = -1.3
-        self._missions = self.construct_waypoints({}, self._tasks, self._hold_depth, self._blue_arrow_pos, self._red_arrow_pos, self._buoy_pos, self)
+        self._missions = self.construct_waypoints({}, self._tasks, self._hold_depth, self._blue_arrow_pos, self._red_arrow_pos, self._buoy_pos, self.pose)
         print(f"MISSIONS DICT: {self._missions}")
 
         # Indexes
