@@ -158,7 +158,7 @@ class MissionWaypoints(Node):
         )
 
         self.get_logger().info(
-            f"\n\n{self._missions[self._tasks[self._task_index]]}: {self._waypoints[self._waypoints_index]}"
+        f"\n\nTask: {self._tasks[self._task_index]}"
         )
 
         if (yaw_error < eps_angle) and (position_error < eps_position):
