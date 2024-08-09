@@ -154,7 +154,7 @@ class MissionWaypoints(Node):
         pose_rounded = [round(x, 2) for x in self.pose]
         wrench_rounded = [round(x, 2) for x in self.wrench]
         self.get_logger().info(
-            f"\n\nCurrent Pose: {pose_rounded}\nDesired Pose: {self._desired_pose}\nPosition Error: {position_error}\nYaw Error: {yaw_error}\nWrench: {wrench_rounded}\nTask: {self._tasks[self._task_index]"
+            f"\n\nCurrent Pose: {pose_rounded}\nDesired Pose: {self._desired_pose}\nPosition Error: {position_error}\nYaw Error: {yaw_error}\nWrench: {wrench_rounded}\nTask: {self._tasks[self._task_index]}"
         )
 
         if (yaw_error < eps_angle):# and (position_error < eps_position):
