@@ -157,7 +157,7 @@ class MissionWaypoints(Node):
             f"\n\nCurrent Pose: {pose_rounded}\nDesired Pose: {self._desired_pose}\nPosition Error: {position_error}\nYaw Error: {yaw_error}\nWrench: {wrench_rounded}\nTask: {self._tasks[self._task_index]"
         )
 
-        if (yaw_error < eps_angle) and (position_error < eps_position):
+        if (yaw_error < eps_angle):# and (position_error < eps_position):
             if self._waypoints_index < len(self._waypoints) - 1: # Switch waypoints within a task
                 self._waypoints_index += 1
                 self._desired_pose = self._waypoints[self._waypoints_index]
