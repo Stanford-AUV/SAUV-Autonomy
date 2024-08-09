@@ -28,7 +28,7 @@ class MissionWaypoints(Node):
         self._tasks = np.array(["submerge", "move_through_gate_blue_arrow", "spin_ccw", "move_towards_buoy", "circumnavigate_buoy_ccw", "surface"]) # PERCEPTION TO CHANGE THESE
 
         self._hold_depth = -1.3
-        self._missions = self.construct_waypoints({}, self._tasks, self._hold_depth, self._blue_arrow_pos, self._red_arrow_pos, self._buoy_pos, self.pose)
+        self._missions = self.construct_waypoints({}, self._tasks, self._blue_arrow_pos, self._red_arrow_pos, self._buoy_pos, self.pose, self._hold_depth)
         print(f"MISSIONS DICT: {self._missions}")
 
          # Indexes
@@ -47,7 +47,7 @@ class MissionWaypoints(Node):
         timer_period = 0.1  # TODO: Don't hardcode this
         self.timer = self.create_timer(timer_period, self.timer_callback)
         
-    def construct_waypoints(self, missions, tasks, hold_depth, blue_arrow_pos, red_arrow_pos, buoy_pos, robot_pose):
+    def construct_waypoints(self, missions, tasks, blue_arrow_pos, red_arrow_pos, buoy_pos, robot_pose, hold_depth=-1.5):
         for task in tasks:
             waypoints_list = []
             if task == "submerge":
