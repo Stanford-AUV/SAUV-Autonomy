@@ -10,37 +10,32 @@ from std_msgs.msg import Header
 from control.utils import pose_to_np, odometry_to_np, wrench_to_np
 from pathlib import Path
 
-class CheckpointManager(Node):
+class MissionWaypoints(Node):
 
     def __init__(self):
-        super().__init__("manual_waypoints")
+        super().__init__("mission_waypoints")
 
-        path = Path.cwd() / "src" / "guidance" / "data" / "manual_waypoints.json"
-        with open(path, "r") as f:
-            self.missions_json = json.load(f)
+        # path = Path.cwd() / "src" / "guidance" / "data" / "mission_waypoints.json"
+        # with open(path, "r") as f:
+        #     self.missions_json = json.load(f)
 
-        self._blue_arrow_pos = np.array([5.88, 0.6, -1.5, 0.0, 0.0, 0.0]) # TODO, MODIFY BASED ON COURSE
-        self._red_arrow_pos = np.array([0.0, 0.0, -1.5, 0.0, 0.0, 0.0])
-        self._buoy_pos = np.array([0.0, 0.0, -1.5, 0.0, 0.0, 0.0])
+        self._blue_arrow_pos = np.array([5.2, 0.6, -0.5]) # TODO, MODIFY BASED ON COURSE
+        self._red_arrow_pos = np.array([5.2, -0.6, -0.5])
+        self._buoy_pos = np.array([9.3, -1.34, -0.5]) # ALPHA COURSE
+        # self._buoy_pos = np.array([9.3, -1.34, -0.5]) # BETA COURSE
+        # self._buoy_pos = np.array([9.3, -1.34, -0.5]) # C COURSE
+        # self._buoy_pos = np.array([9.3, 0.0, -1.5, 0.0, 0.0, 0.0]) # DELTA COURSE
 
-        self._task_lane = "alpha" # alpha or delta
-        self._additive = False
-
-        self._gate_tasks = np.array(["submerge", "move_through_gate", "spin_ccw"]) # CAN CHANG TO CW
-        self._buoy_tasks = np.array(["move_towards_buoy", "circumnavigate_ccw", "spin_ccw", "surface"]) # PERCEPTION TO CHANGE THESE
+        self._tasks = np.array(["submerge", "move_through_gate_blue_arrow", "spin_ccw", "move_towards_buoy", "circumnavigate_buoy_ccw", "surface"]) # PERCEPTION TO CHANGE THESE
         
-        buoytask = self._task_lane + "_buoy"
-        self._missions = ["gate", buoytask]
-
-        if self._additive:
-            self._missions[0] = "additive_" + self.missions[0]
-            self._missions[1] = "additive_" + self.missions[1]
+        self._hold_depth = -1.3
+        self._missions = self.construct_waypoints({}, self._tasks, self._hold_depth, self._blue_arrow_pos, self._red_arrow_pos, self._buoy_pos, self)
+        print(f"MISSIONS DICT: {self._missions}")
 
         # Indexes
-        self._mission_index = 0
         self._task_index = 0
         self._waypoints_index = 0
-        self._waypoints = np.array(self.missions_json[self._missions[self._mission_index]][self._gate_tasks[self._task_index]], dtype=np.float64)
+        self._waypoints = np.array(self._missions[self._tasks[self._task_index]], dtype=np.float64)
 
         self._desired_pose = self._waypoints[self._waypoints_index]
         self._desired_pose_pub = self.create_publisher(Pose, "desired_pose", 10)
@@ -55,6 +50,53 @@ class CheckpointManager(Node):
 
         timer_period = 0.1  # TODO: Don't hardcode this
         self.timer = self.create_timer(timer_period, self.timer_callback)
+        
+    def construct_waypoints(self, missions, tasks, hold_depth, blue_arrow_pos, red_arrow_pos, buoy_pos, robot_pose):
+        for task in tasks:
+            waypoints_list = []
+            if task == "submerge":
+                point = [0.0, 0.0, hold_depth, 0.0, 0.0, 0.0]
+                waypoints_list.append(point)
+            elif task == "move_through_gate_blue_arrow":
+                point = [blue_arrow_pos[0] + 1, blue_arrow_pos[1], hold_depth, 0.0, 0.0, 0.0] # Go 1m past gate
+                waypoints_list.append(point)
+            elif task == "move_through_gate_red_arrow":
+                point = [red_arrow_pos[0] + 1, red_arrow_pos[1], hold_depth, 0.0, 0.0, 0.0] # Go 1m past gate
+                waypoints_list.append(point)
+            elif task == "spin_ccw":
+                for i in range(8):
+                    if "move_through_gate_blue_arrow" in tasks:
+                        point = [blue_arrow_pos[0] + 1, blue_arrow_pos[1], hold_depth, 0.0, 0.0, np.pi * (i+1)]
+                    elif "move_through_gate_red_arrow" in tasks:
+                        point = [red_arrow_pos[0] + 1, red_arrow_pos[1], hold_depth, 0.0, 0.0, np.pi * (i+1)]
+                    waypoints_list.append(point)
+            elif task == "spin_cw":
+                for i in range(8):
+                    if "move_through_gate_blue_arrow" in tasks:
+                        point = [blue_arrow_pos[0] + 1, blue_arrow_pos[1], hold_depth, 0.0, 0.0, -1 * np.pi * (i+1)]
+                    elif "move_through_gate_red_arrow" in tasks:
+                        point = [red_arrow_pos[0] + 1, red_arrow_pos[1], hold_depth, 0.0, 0.0, -1 * np.pi * (i+1)]
+                    waypoints_list.append(point)
+            elif task == "move_towards_buoy":
+                point = [buoy_pos[0] - 1, buoy_pos[1], hold_depth, 0.0, 0.0, 0.0]
+                waypoints_list.append(point)
+            elif task == "circumnavigate_buoy_ccw":
+                waypoints_list.append([buoy_pos[0] - 1, buoy_pos[1] - 1, hold_depth, 0.0, 0.0, 0.0])
+                waypoints_list.append([buoy_pos[0] + 1, buoy_pos[1] - 1, hold_depth, 0.0, 0.0, 0.0])
+                waypoints_list.append([buoy_pos[0] + 1, buoy_pos[1] + 1, hold_depth, 0.0, 0.0, 0.0])
+                waypoints_list.append([buoy_pos[0] - 1, buoy_pos[1] + 1, hold_depth, 0.0, 0.0, 0.0])
+                waypoints_list.append([buoy_pos[0] - 1, buoy_pos[1] - 1, hold_depth, 0.0, 0.0, 0.0])
+            elif task == "circumnavigate_buoy_cw":
+                waypoints_list.append([buoy_pos[0] - 1, buoy_pos[1] + 1, hold_depth, 0.0, 0.0, 0.0])
+                waypoints_list.append([buoy_pos[0] + 1, buoy_pos[1] + 1, hold_depth, 0.0, 0.0, 0.0])
+                waypoints_list.append([buoy_pos[0] + 1, buoy_pos[1] - 1, hold_depth, 0.0, 0.0, 0.0])
+                waypoints_list.append([buoy_pos[0] - 1, buoy_pos[1] - 1, hold_depth, 0.0, 0.0, 0.0])
+                waypoints_list.append([buoy_pos[0] - 1, buoy_pos[1] + 1, hold_depth, 0.0, 0.0, 0.0])
+            elif task == "surface":
+                waypoints_list.append([[buoy_pos[0] - 1, buoy_pos[1], -0.1, 0.0, 0.0, 0.0]])
+
+            missions[task] = np.array(waypoints_list)
+        return missions
 
     def normalize_angle(
         self, angle
@@ -115,40 +157,25 @@ class CheckpointManager(Node):
             f"\n\nCurrent Pose: {pose_rounded}\nDesired Pose: {self._desired_pose}\nPosition Error: {position_error}\nYaw Error: {yaw_error}\nWrench: {wrench_rounded}\n"
         )
 
-        if self._mission_index == 0:
-            self.get_logger().info(
-                f"\n\n{self._missions[self._mission_index]}[{self._gate_tasks[self._task_index]}]: {self._waypoints[self._waypoints_index]}"
-            )
-        else:
-            self.get_logger().info(
-                f"\n\n{self._missions[self._mission_index]}[{self._buoy_tasks[self._task_index]}]: {self._waypoints[self._waypoints_index]}"
-            )
+        self.get_logger().info(
+            f"\n\n{self._missions[self._tasks[self._task_index]]}: {self._waypoints[self._waypoints_index]}"
+        )
 
         if (yaw_error < eps_angle) and (position_error < eps_position):
             if self._waypoints_index < len(self._waypoints) - 1: # Switch waypoints within a task
                 self._waypoints_index += 1
-                if self._additive: # Add next "waypoint" to current pose
-                    self._desired_pose = self.pose + self._waypoints[self._waypoints_index]
-                else: # Move to next waypoint
-                    self._desired_pose = self._waypoints[self._waypoints_index]
-            elif self._mission_index == 0 and self._task_index < len(self._gate_tasks) - 1: # Switch tasks within the gate mission
+                self._desired_pose = self._waypoints[self._waypoints_index]
+            elif self._task_index < len(self._tasks) - 1: # Switch tasks
                 self._task_index += 1
                 self._waypoints_index = 0
-                self._waypoints = np.array(self.missions_json[self._missions[self._mission_index]][self._gate_tasks[self._task_index]], dtype=np.float64)
-            elif self._mission_index == 1 and self._task_index < len(self._buoy_tasks) - 1: # Switch tasks within the buoy mission
-                self._task_index += 1
-                self._waypoints_index = 0
-                self._waypoints = np.array(self.missions_json[self._missions[self._mission_index]][self._buoy_tasks[self._task_index]], dtype=np.float64)
-            elif self._mission_index < len(self._missions) - 1: # Switch missions (gate -> buoy)
-                self._mission_index += 1
-                self._task_index = 0
+                self._waypoints = np.array(self._missions[self._tasks[self._task_index]], dtype=np.float64)
             else:
                 self.get_logger().info("END")
 
 
 def main(args=None):
     rclpy.init(args=args)
-    node = CheckpointManager()
+    node = MissionWaypoints()
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
