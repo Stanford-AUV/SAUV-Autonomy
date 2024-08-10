@@ -182,36 +182,37 @@ class MissionWaypoints(Node):
         # msg.data = pwm
         self._desired_pose_pub.publish(msg)
 
+        eps_position = 0.8  # TODO tune
+        eps_angle = 0.20  # TODO tune
+
+        self._missions = self.construct_waypoints(missions=self._missions, tasks=["submerge"], buoy_pos=self._buoy_pos, blue_arrow_pos=self._blue_arrow_pos, red_arrow_pos=self._red_arrow_pos, robot_pose=self.pose, octagon_pos=self._octagon_pos)
+        self._waypoints = np.array(self._missions[self._tasks[self._task_index]], dtype=np.float64)
+        self._desired_pose = self._waypoints[self._waypoints_index]
+
+        position_error = np.linalg.norm(self.pose[:3] - self._desired_pose[:3])
+        yaw_error = np.abs(self.find_yaw_error(self.pose[5], self._desired_pose[5]))
+
+        pose_rounded = [round(x, 2) for x in self.pose]
+        wrench_rounded = [round(x, 2) for x in self.wrench]
+        self.get_logger().info(
+            f"\n\nCurrent Pose: {pose_rounded}\nDesired Pose: {self._desired_pose}\nPosition Error: {position_error}\nYaw Error: {yaw_error}\nWrench: {wrench_rounded}\nTask: {self._tasks[self._task_index]}"
+        )
+
+        if (yaw_error < eps_angle) and (position_error < eps_position):
+            if self._waypoints_index < len(self._waypoints) - 1: # Switch waypoints within a task
+                self._waypoints_index += 1
+                self._desired_pose = self._waypoints[self._waypoints_index]
+            elif self._task_index < len(self._tasks) - 1: # Switch tasks
+                self._task_index += 1
+                self._waypoints_index = 0
+                self._waypoints = np.array(self._missions[self._tasks[self._task_index]], dtype=np.float64)
+                self.get_logger().info(f"WAYPOINTS: {self._waypoints}")
+            else:
+                self.get_logger().info("END")
+
     def current_state_callback(self, msg: Odometry):
         with self.lock:
             self.pose = np.array(odometry_to_np(msg))
-            eps_position = 0.8  # TODO tune
-            eps_angle = 0.20  # TODO tune
-
-            self._missions = self.construct_waypoints(missions=self._missions, tasks=["submerge"], buoy_pos=self._buoy_pos, blue_arrow_pos=self._blue_arrow_pos, red_arrow_pos=self._red_arrow_pos, robot_pose=self.pose, octagon_pos=self._octagon_pos)
-            self._waypoints = np.array(self._missions[self._tasks[self._task_index]], dtype=np.float64)
-            self._desired_pose = self._waypoints[self._waypoints_index]
-
-            position_error = np.linalg.norm(self.pose[:3] - self._desired_pose[:3])
-            yaw_error = np.abs(self.find_yaw_error(self.pose[5], self._desired_pose[5]))
-
-            pose_rounded = [round(x, 2) for x in self.pose]
-            wrench_rounded = [round(x, 2) for x in self.wrench]
-            self.get_logger().info(
-                f"\n\nCurrent Pose: {pose_rounded}\nDesired Pose: {self._desired_pose}\nPosition Error: {position_error}\nYaw Error: {yaw_error}\nWrench: {wrench_rounded}\nTask: {self._tasks[self._task_index]}"
-            )
-
-            if (yaw_error < eps_angle) and (position_error < eps_position):
-                if self._waypoints_index < len(self._waypoints) - 1: # Switch waypoints within a task
-                    self._waypoints_index += 1
-                    self._desired_pose = self._waypoints[self._waypoints_index]
-                elif self._task_index < len(self._tasks) - 1: # Switch tasks
-                    self._task_index += 1
-                    self._waypoints_index = 0
-                    self._waypoints = np.array(self._missions[self._tasks[self._task_index]], dtype=np.float64)
-                    self.get_logger().info(f"WAYPOINTS: {self._waypoints}")
-                else:
-                    self.get_logger().info("END")
 
 
 def main(args=None):
