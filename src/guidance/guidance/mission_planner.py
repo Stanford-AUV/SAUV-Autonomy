@@ -18,11 +18,17 @@ class MissionWaypoints(Node):
         self.dim_ = 6
         self.wrench = np.zeros(self.dim_)
         self.pose = np.zeros(self.dim_)
-
-        self._blue_arrow_pos = np.array([5.2, 0.6, -0.5]) # TODO, MODIFY BASED ON COURSE
-        self._red_arrow_pos = np.array([5.2, -0.6, -0.5])
-        self._buoy_pos = np.array([9.3, -1.34, -0.5]) # ALPHA COURSE
-        # self._buoy_pos = np.array([9.3, -1.34, -0.5]) # BETA COURSE
+        
+        # Alpha
+        """
+        self._blue_arrow_pos = np.array([4.6, 0.5, -0.1]) # TODO, MODIFY BASED ON COURSE
+        self._red_arrow_pos = np.array([4.6, -0.5, -0.1])
+        self._buoy_pos = np.array([9.0, -4.37, -0.1]) # ALPHA COURSE
+        """
+        # Beta
+        self._blue_arrow_pos = np.array([5.0, 0.5, -0.1]) # TODO, MODIFY BASED ON COURSE
+        self._red_arrow_pos = np.array([5.0, -0.5, -0.1])
+        self._buoy_pos = np.array([8.7, -3.25, -0.1]) # BETA COURSE
         # self._buoy_pos = np.array([9.3, -1.34, -0.5]) # C COURSE
         # self._buoy_pos = np.array([9.3, 0.0, -1.5, 0.0, 0.0, 0.0]) # DELTA COURSE
         self._tasks = np.array(["submerge", "move_through_gate_blue_arrow", "spin_ccw", "move_towards_buoy", "circumnavigate_buoy_ccw", "surface"]) # PERCEPTION TO CHANGE THESE
@@ -67,16 +73,16 @@ class MissionWaypoints(Node):
             elif task == "spin_ccw":
                 for i in range(8):
                     if "move_through_gate_blue_arrow" in tasks:
-                        point = [blue_arrow_pos[0] + 1, blue_arrow_pos[1], hold_depth, 0.0, 0.0, np.pi * (i+1) % (2*np.pi)]
+                        point = [blue_arrow_pos[0] + 1, blue_arrow_pos[1], hold_depth, 0.0, 0.0, np.pi/2* (i+1) % (2*np.pi)]
                     elif "move_through_gate_red_arrow" in tasks:
-                        point = [red_arrow_pos[0] + 1, red_arrow_pos[1], hold_depth, 0.0, 0.0, np.pi * (i+1) % (2*np.pi)]
+                        point = [red_arrow_pos[0] + 1, red_arrow_pos[1], hold_depth, 0.0, 0.0, np.pi/2 * (i+1) % (2*np.pi)]
                     waypoints_list.append(point)
             elif task == "spin_cw":
                 for i in range(8):
                     if "move_through_gate_blue_arrow" in tasks:
-                        point = [blue_arrow_pos[0] + 1, blue_arrow_pos[1], hold_depth, 0.0, 0.0, -1 * np.pi * (i+1) % (2*np.pi)]
+                        point = [blue_arrow_pos[0] + 1, blue_arrow_pos[1], hold_depth, 0.0, 0.0, -1 * np.pi/2 * (i+1) % (2*np.pi)]
                     elif "move_through_gate_red_arrow" in tasks:
-                        point = [red_arrow_pos[0] + 1, red_arrow_pos[1], hold_depth, 0.0, 0.0, -1 * np.pi * (i+1) % (2*np.pi)]
+                        point = [red_arrow_pos[0] + 1, red_arrow_pos[1], hold_depth, 0.0, 0.0, -1 * np.pi/2 * (i+1) % (2*np.pi)]
                     waypoints_list.append(point)
             elif task == "move_towards_buoy":
                 point = [buoy_pos[0] - 1, buoy_pos[1], hold_depth, 0.0, 0.0, 0.0]
@@ -94,7 +100,7 @@ class MissionWaypoints(Node):
                 waypoints_list.append([buoy_pos[0] - 1, buoy_pos[1] - 1, hold_depth, 0.0, 0.0, 0.0])
                 waypoints_list.append([buoy_pos[0] - 1, buoy_pos[1] + 1, hold_depth, 0.0, 0.0, 0.0])
             elif task == "surface":
-                waypoints_list.append([[buoy_pos[0] - 1, buoy_pos[1], -0.1, 0.0, 0.0, 0.0]])
+                waypoints_list.append([buoy_pos[0] - 1, buoy_pos[1], -0.0, 0.0, 0.0, 0.0])
 
             missions[task] = waypoints_list
         return missions
@@ -161,10 +167,12 @@ class MissionWaypoints(Node):
 
     def current_state_callback(self, msg: Odometry):
         self.pose = np.array(odometry_to_np(msg))
-        eps_position = 0.5  # TODO tune
-        eps_angle = 0.1  # TODO tune
+        eps_position = 1.5  # TODO tune
+        eps_angle = 0.25  # TODO tune
 
         self._missions = self.construct_waypoints(missions=self._missions, tasks=["submerge"], buoy_pos=self._buoy_pos, blue_arrow_pos=self._blue_arrow_pos, red_arrow_pos=self._red_arrow_pos, robot_pose=self.pose)
+        self._waypoints = np.array(self._missions[self._tasks[self._task_index]], dtype=np.float64)
+        self._desired_pose = self._waypoints[self._waypoints_index]
 
         position_error = np.linalg.norm(self.pose[:3] - self._desired_pose[:3])
         yaw_error = np.abs(self.find_yaw_error(self.pose[5], self._desired_pose[5]))
@@ -175,7 +183,7 @@ class MissionWaypoints(Node):
             f"\n\nCurrent Pose: {pose_rounded}\nDesired Pose: {self._desired_pose}\nPosition Error: {position_error}\nYaw Error: {yaw_error}\nWrench: {wrench_rounded}\nTask: {self._tasks[self._task_index]}"
         )
 
-        if (yaw_error < eps_angle):# and (position_error < eps_position):
+        if (yaw_error < eps_angle) and (position_error < eps_position):
             if self._waypoints_index < len(self._waypoints) - 1: # Switch waypoints within a task
                 self._waypoints_index += 1
                 self._desired_pose = self._waypoints[self._waypoints_index]
@@ -183,6 +191,7 @@ class MissionWaypoints(Node):
                 self._task_index += 1
                 self._waypoints_index = 0
                 self._waypoints = np.array(self._missions[self._tasks[self._task_index]], dtype=np.float64)
+                self.get_logger().info(f"WAYPOINTS: {self._waypoints}")
             else:
                 self.get_logger().info("END")
 
