@@ -34,10 +34,12 @@ class MissionWaypoints(Node):
         """
 
         # Charlie
-        # self._blue_arrow_pos = np.array([5.0, 0.5, -0.1]) # TODO, MODIFY BASED ON COURSE
-        # self._red_arrow_pos = np.array([5.0, -0.5, -0.1])
-        # self._buoy_pos = np.array([8.7, -3.25, -0.1])
-        # self._octagon_pos = np.array([1, 1, 1])
+        """
+        self._blue_arrow_pos = np.array([5.0, 0.5, -0.1]) # TODO, MODIFY BASED ON COURSE
+        self._red_arrow_pos = np.array([5.0, -0.5, -0.1])
+        self._buoy_pos = np.array([8.7, -3.25, -0.1])
+        self._octagon_pos = np.array([1, 1, 1])
+        """
 
         # Delta
         """
@@ -46,6 +48,12 @@ class MissionWaypoints(Node):
         self._buoy_pos = np.array([8.7, -3.25, -0.1])
         self._octagon_pos = np.array([1, 1, 1])
         """
+
+        # CORNER TEST
+        self._blue_arrow_pos = np.array([1.0, 0.5, -0.1]) # TODO, MODIFY BASED ON COURSE
+        self._red_arrow_pos = np.array([1.0, -0.5, -0.1])
+        self._buoy_pos = np.array([2, -1.25, -0.1])
+        self._octagon_pos = np.array([3, 1, -0.1])
 
         self._tasks = np.array(["submerge", "move_through_gate_blue_arrow", "spin_ccw", "move_towards_buoy", "circumnavigate_buoy_ccw", "buoy_to_octagon", "move_under_octagon", "surface"]) # PERCEPTION TO CHANGE THESE
 
