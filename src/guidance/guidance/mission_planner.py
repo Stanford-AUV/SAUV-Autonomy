@@ -9,6 +9,7 @@ from geometry_msgs.msg import Vector3
 from std_msgs.msg import Header
 from control.utils import pose_to_np, odometry_to_np, wrench_to_np
 from pathlib import Path
+import threading
 
 class MissionWaypoints(Node):
 
@@ -71,6 +72,7 @@ class MissionWaypoints(Node):
         self._desired_pose = self._waypoints[self._waypoints_index]
         self._desired_pose_pub = self.create_publisher(Pose, "desired_pose", 10)
         self._desired_wrench_sub = self.create_subscription(Wrench, "desired_wrench", self.wrench_callback, 10)
+        self.lock = threading.Lock()
 
         self._current_state_sub = self.create_subscription(
             Odometry, "/odometry/filtered", self.current_state_callback, 10
@@ -163,51 +165,53 @@ class MissionWaypoints(Node):
         self.wrench = wrench_to_np(msg)
 
     def timer_callback(self):
-        msg = Pose(
-            header=Header(stamp=self.get_clock().now().to_msg()),
-            position=Vector3(
-                x=self._desired_pose[0],
-                y=self._desired_pose[1],
-                z=self._desired_pose[2],
-            ),
-            orientation=Vector3(
-                x=self._desired_pose[3],
-                y=self._desired_pose[4],
-                z=self._desired_pose[5],
-            ),
+        with self.lock:
+            msg = Pose(
+                header=Header(stamp=self.get_clock().now().to_msg()),
+                position=Vector3(
+                    x=self._desired_pose[0],
+                    y=self._desired_pose[1],
+                    z=self._desired_pose[2],
+                ),
+                orientation=Vector3(
+                    x=self._desired_pose[3],
+                    y=self._desired_pose[4],
+                    z=self._desired_pose[5],
+                ),
         )
         # msg.data = pwm
         self._desired_pose_pub.publish(msg)
 
     def current_state_callback(self, msg: Odometry):
-        self.pose = np.array(odometry_to_np(msg))
-        eps_position = 0.8  # TODO tune
-        eps_angle = 0.20  # TODO tune
+        with self.lock:
+            self.pose = np.array(odometry_to_np(msg))
+            eps_position = 0.8  # TODO tune
+            eps_angle = 0.20  # TODO tune
 
-        self._missions = self.construct_waypoints(missions=self._missions, tasks=["submerge"], buoy_pos=self._buoy_pos, blue_arrow_pos=self._blue_arrow_pos, red_arrow_pos=self._red_arrow_pos, robot_pose=self.pose, octagon_pos=self._octagon_pos)
-        self._waypoints = np.array(self._missions[self._tasks[self._task_index]], dtype=np.float64)
-        self._desired_pose = self._waypoints[self._waypoints_index]
+            self._missions = self.construct_waypoints(missions=self._missions, tasks=["submerge"], buoy_pos=self._buoy_pos, blue_arrow_pos=self._blue_arrow_pos, red_arrow_pos=self._red_arrow_pos, robot_pose=self.pose, octagon_pos=self._octagon_pos)
+            self._waypoints = np.array(self._missions[self._tasks[self._task_index]], dtype=np.float64)
+            self._desired_pose = self._waypoints[self._waypoints_index]
 
-        position_error = np.linalg.norm(self.pose[:3] - self._desired_pose[:3])
-        yaw_error = np.abs(self.find_yaw_error(self.pose[5], self._desired_pose[5]))
+            position_error = np.linalg.norm(self.pose[:3] - self._desired_pose[:3])
+            yaw_error = np.abs(self.find_yaw_error(self.pose[5], self._desired_pose[5]))
 
-        pose_rounded = [round(x, 2) for x in self.pose]
-        wrench_rounded = [round(x, 2) for x in self.wrench]
-        self.get_logger().info(
-            f"\n\nCurrent Pose: {pose_rounded}\nDesired Pose: {self._desired_pose}\nPosition Error: {position_error}\nYaw Error: {yaw_error}\nWrench: {wrench_rounded}\nTask: {self._tasks[self._task_index]}"
-        )
+            pose_rounded = [round(x, 2) for x in self.pose]
+            wrench_rounded = [round(x, 2) for x in self.wrench]
+            self.get_logger().info(
+                f"\n\nCurrent Pose: {pose_rounded}\nDesired Pose: {self._desired_pose}\nPosition Error: {position_error}\nYaw Error: {yaw_error}\nWrench: {wrench_rounded}\nTask: {self._tasks[self._task_index]}"
+            )
 
-        if (yaw_error < eps_angle) and (position_error < eps_position):
-            if self._waypoints_index < len(self._waypoints) - 1: # Switch waypoints within a task
-                self._waypoints_index += 1
-                self._desired_pose = self._waypoints[self._waypoints_index]
-            elif self._task_index < len(self._tasks) - 1: # Switch tasks
-                self._task_index += 1
-                self._waypoints_index = 0
-                self._waypoints = np.array(self._missions[self._tasks[self._task_index]], dtype=np.float64)
-                self.get_logger().info(f"WAYPOINTS: {self._waypoints}")
-            else:
-                self.get_logger().info("END")
+            if (yaw_error < eps_angle) and (position_error < eps_position):
+                if self._waypoints_index < len(self._waypoints) - 1: # Switch waypoints within a task
+                    self._waypoints_index += 1
+                    self._desired_pose = self._waypoints[self._waypoints_index]
+                elif self._task_index < len(self._tasks) - 1: # Switch tasks
+                    self._task_index += 1
+                    self._waypoints_index = 0
+                    self._waypoints = np.array(self._missions[self._tasks[self._task_index]], dtype=np.float64)
+                    self.get_logger().info(f"WAYPOINTS: {self._waypoints}")
+                else:
+                    self.get_logger().info("END")
 
 
 def main(args=None):
