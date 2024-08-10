@@ -3,7 +3,7 @@ from rclpy.node import Node
 import numpy as np
 import math
 import json
-from msgs.msg import Pose, Wrench, State
+from msgs.msg import Pose, Wrench
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Vector3
 from std_msgs.msg import Header
@@ -18,7 +18,6 @@ class MissionWaypoints(Node):
         self.dim_ = 6
         self.wrench = np.zeros(self.dim_)
         self.pose = np.zeros(self.dim_)
-        
         # Alpha
         """
         self._blue_arrow_pos = np.array([4.6, 0.5, -0.1]) # TODO, MODIFY BASED ON COURSE
@@ -47,7 +46,6 @@ class MissionWaypoints(Node):
         self._desired_pose = self._waypoints[self._waypoints_index]
         self._desired_pose_pub = self.create_publisher(Pose, "desired_pose", 10)
         self._desired_wrench_sub = self.create_subscription(Wrench, "desired_wrench", self.wrench_callback, 10)
-        self._state_pub = self.create_publisher(Pose, "state", 10)
 
         self._current_state_sub = self.create_subscription(
             Odometry, "/odometry/filtered", self.current_state_callback, 10
@@ -55,7 +53,7 @@ class MissionWaypoints(Node):
 
         timer_period = 0.1  # TODO: Don't hardcode this
         self.timer = self.create_timer(timer_period, self.timer_callback)
-        
+
     def construct_waypoints(self, missions, tasks, blue_arrow_pos, red_arrow_pos, buoy_pos, robot_pose, hold_depth=-1.5):
         for task in tasks:
             waypoints_list = []
@@ -147,23 +145,8 @@ class MissionWaypoints(Node):
                 z=self._desired_pose[5],
             ),
         )
-
-        state_msg = Pose(
-            header=Header(stamp=self.get_clock().now().to_msg()),
-            position=Vector3(
-                x=self._desired_pose[0],
-                y=self._desired_pose[1],
-                z=self._desired_pose[2],
-            ),
-            orientation=Vector3(
-                x=self._desired_pose[3],
-                y=self._desired_pose[4],
-                z=self._desired_pose[5],
-            ),
-        )
         # msg.data = pwm
         self._desired_pose_pub.publish(msg)
-        self._state_pub.publish(state_msg)
 
     def current_state_callback(self, msg: Odometry):
         self.pose = np.array(odometry_to_np(msg))
