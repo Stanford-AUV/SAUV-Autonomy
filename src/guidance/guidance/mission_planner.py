@@ -30,7 +30,7 @@ class MissionWaypoints(Node):
         self._buoy_pos = np.array([8.7, -3.25, -0.1]) # BETA COURSE
         # self._buoy_pos = np.array([9.3, -1.34, -0.5]) # C COURSE
         # self._buoy_pos = np.array([9.3, 0.0, -1.5, 0.0, 0.0, 0.0]) # DELTA COURSE
-        self._tasks = np.array(["submerge", "move_through_gate_blue_arrow", "spin_ccw", "move_towards_buoy", "circumnavigate_buoy_ccw", "surface"]) # PERCEPTION TO CHANGE THESE
+        self._tasks = np.array(["submerge", "move_through_gate_blue_arrow", "spin_ccw", "move_towards_buoy", "circumnavigate_buoy_ccw", "move_towards_octagon", " ", "surface"]) # PERCEPTION TO CHANGE THESE
 
         self._hold_depth = -1.3
         self._missions = self.construct_waypoints({}, self._tasks, self._blue_arrow_pos, self._red_arrow_pos, self._buoy_pos, self.pose, self._hold_depth)
