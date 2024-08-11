@@ -210,7 +210,6 @@ class MissionWaypoints(Node):
                 self.get_logger().info("END")
 
 
-
         eps_position = 0.8  # TODO tune
         eps_angle = 0.20  # TODO tune
 
@@ -242,12 +241,7 @@ class MissionWaypoints(Node):
     def current_state_callback(self, msg: Odometry):
         with self.lock:
             self.pose = np.array(odometry_to_np(msg))
-<<<<<<< HEAD
-
-
-=======
            
->>>>>>> 2e9b8b9 (JUST KEEP SWIMMING)
 def main(args=None):
     rclpy.init(args=args)
     node = MissionWaypoints()
