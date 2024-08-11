@@ -37,8 +37,10 @@ class MissionWaypoints(Node):
         # Charlie
         self._blue_arrow_pos = np.array([4.6, -0.5, -0.1]) # TODO, MODIFY BASED ON COURSE
         self._red_arrow_pos = np.array([4.6, 0.5, -0.1])
-        self._buoy_pos = np.array([9.3, 2.5, -0.1])
+        self._buoy_pos = np.array([9.3, 2.7, -0.1])
         self._octagon_pos = np.array([18, -0.5, -0.1])
+        self._mapper_pos = np.array([1, 1, 1])
+        self._bin_pos = np.array([1, 1, 1]) # TODO OOOO
 
         # Delta
         """
@@ -46,6 +48,8 @@ class MissionWaypoints(Node):
         self._red_arrow_pos = np.array([4.6, 0.5, -0.1])
         self._buoy_pos = np.array([9, 4.3, -0.1])
         self._octagon_pos = np.array([18, 3.4, -0.1])
+        self._mapper_pos = np.array([1, 1, 1])
+        self._bin_pos = np.array([1, 1, 1]) # TODO OOOO
         """
 
         # CORNER TEST
@@ -56,10 +60,10 @@ class MissionWaypoints(Node):
         self._octagon_pos = np.array([4, 2, -0.1])
         """
 
-        self._tasks = np.array(["submerge", "move_through_gate_blue_arrow", "spin_ccw", "move_towards_buoy", "circumnavigate_buoy_ccw", "buoy_to_octagon", "move_under_octagon", "surface"]) # PERCEPTION TO CHANGE THESE
+        self._tasks = np.array(["submerge", "move_through_gate_blue_arrow", "spin_ccw", "move_towards_buoy", "circumnavigate_buoy_ccw", "buoy_to_octagon", "move_under_octagon", "surface", "octagon_to_mapper", "mapper_launch", "mapper_to_bin", "bin_drop"]) # PERCEPTION TO CHANGE THESE
 
         self._hold_depth = -1.3
-        self._missions = self.construct_waypoints(missions={}, tasks=self._tasks, blue_arrow_pos=self._blue_arrow_pos, red_arrow_pos=self._red_arrow_pos, buoy_pos=self._buoy_pos, robot_pose=self.pose, hold_depth=self._hold_depth, octagon_pos=self._octagon_pos)
+        self._missions = self.construct_waypoints(missions={}, tasks=self._tasks, blue_arrow_pos=self._blue_arrow_pos, red_arrow_pos=self._red_arrow_pos, buoy_pos=self._buoy_pos, robot_pose=self.pose, hold_depth=self._hold_depth, octagon_pos=self._octagon_pos, mapper_pos=self._mapper_pos, bin_pos=self._bin_pos)
         print("MISSIONS DICT:")
         for key, value in self._missions.items():
             print(f"{key}: {value}\n")
@@ -81,7 +85,7 @@ class MissionWaypoints(Node):
         timer_period = 0.1  # TODO: Don't hardcode this
         self.timer = self.create_timer(timer_period, self.timer_callback)
 
-    def construct_waypoints(self, missions, tasks, blue_arrow_pos, red_arrow_pos, buoy_pos, octagon_pos, robot_pose, hold_depth=-1.5):
+    def construct_waypoints(self, missions, tasks, blue_arrow_pos, red_arrow_pos, buoy_pos, octagon_pos, robot_pose, mapper_pos, bin_pos, hold_depth=-1.5):
         for task in tasks:
             waypoints_list = []
             if task == "submerge":
@@ -113,25 +117,44 @@ class MissionWaypoints(Node):
                 point = [buoy_pos[0] - 2, buoy_pos[1], hold_depth, 0.0, 0.0, 0.0]
                 waypoints_list.append(point)
             elif task == "circumnavigate_buoy_ccw":
-                waypoints_list.append([buoy_pos[0] - 1, buoy_pos[1] - 1.5, hold_depth, 0.0, 0.0, 0.0])
-                waypoints_list.append([buoy_pos[0] + 1, buoy_pos[1] - 1.5, hold_depth, 0.0, 0.0, 0.0])
-                waypoints_list.append([buoy_pos[0] + 1, buoy_pos[1] + 1.5, hold_depth, 0.0, 0.0, 0.0])
-                waypoints_list.append([buoy_pos[0] - 1, buoy_pos[1] + 1.5, hold_depth, 0.0, 0.0, 0.0])
-                waypoints_list.append([buoy_pos[0] - 1, buoy_pos[1] - 1.5, hold_depth, 0.0, 0.0, 0.0])
-                waypoints_list.append([buoy_pos[0] + 1, buoy_pos[1] - 1.5, hold_depth, 0.0, 0.0, 0.0])
+                waypoints_list.append([buoy_pos[0] - 1.2, buoy_pos[1] - 1.2, hold_depth, 0.0, 0.0, 0.0])
+                waypoints_list.append([buoy_pos[0] + 1.2, buoy_pos[1] - 1.2, hold_depth, 0.0, 0.0, 0.0])
+                waypoints_list.append([buoy_pos[0] + 1.2, buoy_pos[1] + 1.2, hold_depth, 0.0, 0.0, 0.0])
+                waypoints_list.append([buoy_pos[0] - 1.2, buoy_pos[1] + 1.2, hold_depth, 0.0, 0.0, 0.0])
+                waypoints_list.append([buoy_pos[0] - 1.2, buoy_pos[1] - 1.2, hold_depth, 0.0, 0.0, 0.0])
+                waypoints_list.append([buoy_pos[0] + 1.2, buoy_pos[1] - 1.2, hold_depth, 0.0, 0.0, 0.0])
             elif task == "circumnavigate_buoy_cw":
-                waypoints_list.append([buoy_pos[0] - 1, buoy_pos[1] + 1.5, hold_depth, 0.0, 0.0, 0.0])
-                waypoints_list.append([buoy_pos[0] + 1, buoy_pos[1] + 1.5, hold_depth, 0.0, 0.0, 0.0])
-                waypoints_list.append([buoy_pos[0] + 1, buoy_pos[1] - 1.5, hold_depth, 0.0, 0.0, 0.0])
-                waypoints_list.append([buoy_pos[0] - 1, buoy_pos[1] - 1.5, hold_depth, 0.0, 0.0, 0.0])
-                waypoints_list.append([buoy_pos[0] - 1, buoy_pos[1] + 1.5, hold_depth, 0.0, 0.0, 0.0])
-                waypoints_list.append([buoy_pos[0] + 1, buoy_pos[1] + 1.5, hold_depth, 0.0, 0.0, 0.0])
+                waypoints_list.append([buoy_pos[0] - 1.2, buoy_pos[1] + 1.2, hold_depth, 0.0, 0.0, 0.0])
+                waypoints_list.append([buoy_pos[0] + 1.2, buoy_pos[1] + 1.2, hold_depth, 0.0, 0.0, 0.0])
+                waypoints_list.append([buoy_pos[0] + 1.2, buoy_pos[1] - 1.2, hold_depth, 0.0, 0.0, 0.0])
+                waypoints_list.append([buoy_pos[0] - 1.2, buoy_pos[1] - 1.2, hold_depth, 0.0, 0.0, 0.0])
+                waypoints_list.append([buoy_pos[0] - 1.2, buoy_pos[1] + 1.2, hold_depth, 0.0, 0.0, 0.0])
+                waypoints_list.append([buoy_pos[0] + 1.2, buoy_pos[1] + 1.2, hold_depth, 0.0, 0.0, 0.0])
             elif task == "buoy_to_octagon":
                 waypoints_list.append([octagon_pos[0] - 4, octagon_pos[1], hold_depth, 0.0, 0.0, 0.0])
             elif task == "move_under_octagon":
                 waypoints_list.append([octagon_pos[0], octagon_pos[1], hold_depth, 0.0, 0.0, 0.0])
             elif task == "surface":
                 waypoints_list.append([octagon_pos[0], octagon_pos[1], -0.0, 0.0, 0.0, 0.0])
+            elif task == "octagon_to_mapper":
+                waypoints_list.append([octagon_pos[0], octagon_pos[1], hold_depth, 0.0, 0.0, 0.0])
+                waypoints_list.append([octagon_pos[0] - 4, octagon_pos[1], hold_depth, 0.0, 0.0, 0.0])
+                waypoints_list.append([mapper_pos[0] - 1, mapper_pos[1], hold_depth, 0.0, 0.0, 0.0])
+            elif task == "octagon_to_bin":
+                waypoints_list.append([octagon_pos[0], octagon_pos[1], hold_depth, 0.0, 0.0, 0.0])
+                waypoints_list.append([octagon_pos[0] - 4, octagon_pos[1], hold_depth, 0.0, 0.0, 0.0])
+                waypoints_list.append([bin_pos[0] - 1, bin_pos[1], hold_depth, 0.0, 0.0, 0.0])
+            elif task == "mapper_launch":
+                waypoints_list.append([mapper_pos[0] + 0.5, mapper_pos[1], hold_depth, 0.0, 0.0, 0.0])
+                waypoints_list.append([mapper_pos[0] - 1, mapper_pos[1], hold_depth, 0.0, 0.0, 0.0])
+            elif task == "mapper_to_bin":
+                waypoints_list.append([mapper_pos[0] - 1, mapper_pos[1], hold_depth, 0.0, 0.0, 0.0])
+                waypoints_list.append([octagon_pos[0] - 4, octagon_pos[1], hold_depth, 0.0, 0.0, 0.0])
+                waypoints_list.append([bin_pos[0] - 1, bin_pos[1], hold_depth, 0.0, 0.0, 0.0])
+            elif task == "bin_drop":
+                waypoints_list.append([bin_pos[0], bin_pos[1], hold_depth, 0.0, 0.0, 0.0])
+                waypoints_list.append([bin_pos[0], bin_pos[1], hold_depth, 0.0, 0.6, 0.0])
+                waypoints_list.append([bin_pos[0], bin_pos[1], hold_depth, 0.0, 0.0, 0.0])
 
             missions[task] = waypoints_list
         return missions
@@ -184,7 +207,7 @@ class MissionWaypoints(Node):
         eps_position = 0.8  # TODO tune
         eps_angle = 0.20  # TODO tune
 
-        self._missions = self.construct_waypoints(missions=self._missions, tasks=["submerge"], buoy_pos=self._buoy_pos, blue_arrow_pos=self._blue_arrow_pos, red_arrow_pos=self._red_arrow_pos, robot_pose=self.pose, octagon_pos=self._octagon_pos)
+        self._missions = self.construct_waypoints(missions=self._missions, tasks=["submerge"], buoy_pos=self._buoy_pos, blue_arrow_pos=self._blue_arrow_pos, red_arrow_pos=self._red_arrow_pos, robot_pose=self.pose, octagon_pos=self._octagon_pos, mapper_pos=self._mapper_pos, )
         self._waypoints = np.array(self._missions[self._tasks[self._task_index]], dtype=np.float64)
         self._desired_pose = self._waypoints[self._waypoints_index]
 
@@ -213,7 +236,7 @@ class MissionWaypoints(Node):
         eps_position = 0.8  # TODO tune
         eps_angle = 0.20  # TODO tune
 
-        self._missions = self.construct_waypoints(missions=self._missions, tasks=["submerge"], buoy_pos=self._buoy_pos, blue_arrow_pos=self._blue_arrow_pos, red_arrow_pos=self._red_arrow_pos, robot_pose=self.pose, octagon_pos=self._octagon_pos)
+        self._missions = self.construct_waypoints(missions=self._missions, tasks=["submerge"], buoy_pos=self._buoy_pos, blue_arrow_pos=self._blue_arrow_pos, red_arrow_pos=self._red_arrow_pos, robot_pose=self.pose, octagon_pos=self._octagon_pos, mapper_pos=self._mapper_pos, bin_pos=self._bin_pos)
         self._waypoints = np.array(self._missions[self._tasks[self._task_index]], dtype=np.float64)
         self._desired_pose = self._waypoints[self._waypoints_index]
 
