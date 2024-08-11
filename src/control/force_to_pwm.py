@@ -91,9 +91,11 @@ def thrust_to_pwm(thrust, voltage=15.0):
 
     # Requested thrust must be 20% below saturation limit, according to https://bluerobotics.com/store/thrusters/t100-t200-thrusters/t200-thruster-r2-rp/
     if thrust > 0.8 * (0.374 * voltage - 0.78):  # mx + b, calculated by hand
-        raise ValueError("Forward thrust exceeds the maximum limit")
+        thrust = 0.8 * (0.374 * voltage - 0.78)
+        print("Forward thrust exceeds the maximum limit")
     if -thrust > 0.8 * (0.266 * voltage - 0.272):  # mx + b, calculated by hand
-        raise ValueError("Reverse thrust exceeds the maximum limit")
+        thrust = -1 * 0.8 * (0.266 * voltage - 0.272)
+        print("Reverse thrust exceeds the maximum limit")
 
     to_add = 0  # should be centered around 1500, inverse quad model is centering around 1482 for 14-16V
     if voltage >= 18:
@@ -129,10 +131,10 @@ def all_thrusts_to_pwm(thrusts):
 
 def test(thrust_distribution=False, pwm_distribution=False):
     thrust0 = [0, 0, 0, 0, 0, 0]
-    thrust1 = [1, 0, 0, 0, 0, 0]
-    thrust2 = [0, 1, 0, 0, 0, 0]
-    thrust3 = [0, 0, 1, 0, 0, 0]
-    thrust4 = [0, 0, 0, 0, 0, 1]
+    thrust1 = [-4, 0, 0, 0, 0, 0]
+    thrust2 = [0, -4, 0, 0, 0, 0]
+    thrust3 = [0, 0, -4, 0, 0, 0]
+    thrust4 = [0, 0, 0, 0, 0, -4]
 
     # Test correct allocation of thrusts
     if thrust_distribution or pwm_distribution:
@@ -159,4 +161,4 @@ def test(thrust_distribution=False, pwm_distribution=False):
 
 
 if __name__ == "__main__":
-    test()
+    test(pwm_distribution=True)

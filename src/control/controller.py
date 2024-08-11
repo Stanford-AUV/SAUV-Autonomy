@@ -169,7 +169,7 @@ class Controller(Node):
         np.set_printoptions(precision=2, suppress=True)
 
         # Cap the wrench to prevent thrust from exceeding limits
-        wrench = np.clip(local_wrench, -1, 1)
+        wrench = np.clip(local_wrench, -4, 4)
         for i in range(3, 6):
             if abs(wrench[i]) < 0.001:
                 wrench[i] = 0
