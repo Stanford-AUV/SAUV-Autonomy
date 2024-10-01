@@ -1,6 +1,6 @@
 # SAUV-Autonomy
 
-Autonomy stack
+## THIS REPOSITORY IS NOW OUTDATED, PLEASE GO TO https://github.com/Stanford-AUV/RoboSub FOR THE MOST RECENT CODE!
 
 # Installation
 
